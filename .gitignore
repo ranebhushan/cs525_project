@@ -1,0 +1,14 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+# Custom Ignore (includes environment, datasets)
+
+# Ignore Filename Extensions
+*.npy
+*.hdf5
+*.csv
+*.html
+
+# VSCode
+.vscode/*
+.vs/*
+*.code-workspace

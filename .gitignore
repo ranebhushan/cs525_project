@@ -1,6 +1,8 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
 
 # Custom Ignore (includes environment, datasets)
+projectenv/*
+test/*
 
 # Ignore Filename Extensions
 *.npy

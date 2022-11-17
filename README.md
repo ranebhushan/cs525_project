@@ -22,11 +22,13 @@ Master of Science in Robotics Engineering at [Worcester Polytechnic Institute](h
 - PyTorch : [1.13.0](https://pytorch.org/)
 - OpenAI Gym : [0.26.2](https://www.gymlibrary.dev/)
 
-### Usage Guidelines
+### Repository Setup
+In-order to setup the repository locally on your system, open a new terminal and follow the instructions below
 
-- To run this project, you will need to install `highway-env` using the following command:
-    ```
+    cd ~
+    python3 -m venv rl_project
+    sources ~/rl_project/bin/activate
+    git clone git@github.com:ranebhushan/cs525_project.git
+    cd ~/cs525_project/
+    pip install -r requirements.txt
     pip install highway-env
-    ```
-
->To be added

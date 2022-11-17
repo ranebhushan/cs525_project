@@ -20,6 +20,7 @@ Master of Science in Robotics Engineering at [Worcester Polytechnic Institute](h
 - OS : [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/)
 - Python : [3.9.13](https://www.python.org/downloads/release/python-3913/)
 - PyTorch : [1.13.0](https://pytorch.org/)
+- OpenAI Gym : [0.26.2](https://www.gymlibrary.dev/)
 
 ### Usage Guidelines
 

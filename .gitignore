@@ -4,12 +4,16 @@
 projectenv/*
 test/*
 src/common/__pycache__/*
+weights/*
+
 
 # Ignore Filename Extensions
 *.npy
 *.hdf5
 *.csv
 *.html
+*.pth
+*.tar
 
 # VSCode
 .vscode/*

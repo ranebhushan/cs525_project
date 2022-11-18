@@ -1,5 +1,6 @@
 import argparse
 import yaml
+from common.environment import Environment
 
 def parse_args():
     parser = argparse.ArgumentParser()

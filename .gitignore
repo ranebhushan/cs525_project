@@ -3,6 +3,7 @@
 # Custom Ignore (includes environment, datasets)
 projectenv/*
 test/*
+src/common/__pycache__/*
 
 # Ignore Filename Extensions
 *.npy

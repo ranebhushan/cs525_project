@@ -31,4 +31,3 @@ In-order to setup the repository locally on your system, open a new terminal and
     git clone git@github.com:ranebhushan/cs525_project.git
     cd ~/cs525_project/
     pip install -r requirements.txt
-    pip install highway-env

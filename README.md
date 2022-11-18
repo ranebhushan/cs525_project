@@ -23,11 +23,11 @@ Master of Science in Robotics Engineering at [Worcester Polytechnic Institute](h
 - OpenAI Gym : [0.26.2](https://www.gymlibrary.dev/)
 
 ### Repository Setup
-In-order to setup the repository locally on your system, open a new terminal and follow the instructions below
+In order to setup the repository locally on your system, open a new terminal and follow the instructions below
 
     cd ~
     python3 -m venv rl_project
-    sources ~/rl_project/bin/activate
+    source ~/rl_project/bin/activate
     git clone git@github.com:ranebhushan/cs525_project.git
     cd ~/cs525_project/
     pip install -r requirements.txt

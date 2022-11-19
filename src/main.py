@@ -24,7 +24,7 @@ def load_yaml(yaml_path):
 def main():
     args = parse_args()
     dict_args = load_yaml(args.yaml_path)
-    print(dict_args)
+    env = Environment("highway-v0")
 
 if __name__ == '__main__':
     main()

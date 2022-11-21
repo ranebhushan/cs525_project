@@ -4,7 +4,7 @@ import highway_env
 
 class Environment():
     def __init__(self, env_name, img_width=200, img_height=100,\
-                     stack_size=4, scaling=1.75, lanes_count=4):
+                     stack_size=4, scaling=5.75, lanes_count=4):
         self.img_width = img_width
         self.img_height = img_height
         self.stack_size = stack_size
@@ -17,6 +17,7 @@ class Environment():
     
     def configure(self):
         config = {
+            "offscreen_rendering": True,
             "observation": {
                 "type": "GrayscaleObservation",
                 "weights": [0.9, 0.1, 0.5],  # weights for RGB conversion

@@ -25,6 +25,9 @@ def main():
     args = parse_args()
     dict_args = load_yaml(args.yaml_path)
     env = Environment("highway-v0")
+    from agent_dqn import Agent_DQN
+    agent = Agent_DQN(env, dict_args)
+    agent.train()
 
 if __name__ == '__main__':
     main()

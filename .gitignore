@@ -3,8 +3,9 @@
 # Custom Ignore (includes environment, datasets)
 projectenv/*
 test/*
-src/common/__pycache__/*
+__pycache__/
 weights/*
+logs/*
 
 
 # Ignore Filename Extensions

@@ -1,13 +1,19 @@
 import argparse
 import yaml
 from common.environment import Environment
+import json
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--yaml_path",
+    parser.add_argument("--train_config_path",
                         type=str,
                         default="configs/DQN.yaml",
-                        help="yaml path for the run")
+                        help="path for the training parameters")
+    parser.add_argument("--env_config_path",
+                        type=str,
+                        default="configs/highway-env_config.json",
+                        help="path for the environment config parameters")
 
     args = parser.parse_args()
     return args
@@ -23,10 +29,11 @@ def load_yaml(yaml_path):
 
 def main():
     args = parse_args()
-    dict_args = load_yaml(args.yaml_path)
-    env = Environment("highway-v0")
+    train_args = load_yaml(args.train_config_path)
+    env_args = json.load(open(args.env_config_path))
+    env = Environment("highway-v0", env_args)
     from agent_dqn import Agent_DQN
-    agent = Agent_DQN(env, dict_args)
+    agent = Agent_DQN(env, train_args)
     agent.train()
 
 if __name__ == '__main__':

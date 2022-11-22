@@ -239,6 +239,7 @@ class Agent_DQN(Agent):
                 next_state, reward, done, _, _ = self.env.step(action)
                 self.push(current_state, action, reward, next_state, int(done))
                 current_state = next_state
+                self.env.render()
                 # print(len(self.buffer_replay))
                 if len(self.buffer_replay) > self.start_learning:
                     # Decay epsilon

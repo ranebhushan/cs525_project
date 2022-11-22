@@ -13,4 +13,4 @@
 
 echo "RL Job running on $(hostname)"
 
-python3 src/main.py --yaml_path=configs/DQN.yaml
+python3 src/main.py --train_config_path=configs/DQN.yaml --env_config_path=configs/highway-env_config.json

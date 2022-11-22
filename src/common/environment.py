@@ -3,33 +3,20 @@ import numpy as np
 import highway_env
 
 class Environment():
-    def __init__(self, env_name, img_width=200, img_height=100,\
-                     stack_size=4, scaling=5.75, lanes_count=4):
-        self.img_width = img_width
-        self.img_height = img_height
-        self.stack_size = stack_size
-        self.scale = scaling
-        self.lanes_count = lanes_count
+    def __init__(self, env_name, env_config=None):
+        self.env_config = env_config
         self.env = gym.make(env_name)
         self.configure()
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
     
     def configure(self):
-        config = {
-            "offscreen_rendering": True,
-            "observation": {
-                "type": "GrayscaleObservation",
-                "weights": [0.9, 0.1, 0.5],  # weights for RGB conversion
-                "stack_size": self.stack_size,
-                "observation_shape": (self.img_width, self.img_height)
-            },
-            "screen_width": self.img_width,
-            "screen_height": self.img_height,
-            "scaling": self.scale,
-            "lanes_count":self.lanes_count,
-        }
-        self.env.configure(config)
+        if self.env_config:
+            try:
+                self.env_config['observation']['observation_shape'] = tuple(self.env_config['observation']['observation_shape'])
+            except KeyError:
+                pass
+            self.env.configure(self.env_config)
     
     def seed(self, seed):
         '''
@@ -55,3 +42,6 @@ class Environment():
 
     def get_random_action(self):
         return self.action_space.sample()
+    
+    def render(self):
+        self.env.render()

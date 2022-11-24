@@ -1,24 +1,26 @@
 {
-    "action": {"type": "DiscreteMetaAction"},
+    "action": 
+    {
+        "type": "DiscreteMetaAction"
+    },
     "centering_position": [0.3, 0.5],
     "collision_reward": -10,
     "controlled_vehicles": 1,
     "duration": 50,
-    "lane_change_reward": -1.0,
+    "lane_change_reward": 0,
     "lanes_count": 4,
     "observation": {
-        "type": "GrayscaleObservation",
-        "weights": [0.2989, 0.5870, 0.1140],
+        "observation_shape": [600, 150],
         "stack_size": 4,
-        "observation_shape": [160, 64]
+        "type": "GrayscaleObservation",
+        "weights": [0.2989, 0.5870, 0.1140]   
     },
     "other_vehicles_type": "highway_env.vehicle.behavior.IDMVehicle",
     "policy_frequency": 3,
     "reward_speed_range": [20, 30],
     "right_lane_reward": 0.1,
-    "scaling": 1.75,
-    "screen_height": 64,
-    "screen_width": 160,
+    "screen_width": 600,
+    "screen_height": 150,
     "show_trajectories": false,
     "simulation_frequency": 15,
     "vehicles_count": 30,

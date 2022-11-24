@@ -70,6 +70,7 @@ class Agent_DQN():
         self.reward_save_frequency = args['reward_save_frequency']
         self.train_frequency = args['train_frequency']
         self.csv_file_name = args['csv_file_name']
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         try:
             os.remove('logs/' + self.csv_file_name)
         except FileNotFoundError:
@@ -78,10 +79,12 @@ class Agent_DQN():
         self.scores = deque(maxlen=100)
         self.rewards = deque(maxlen=self.reward_save_frequency)
         self.storeEpsilon = []
-        self.policy_net = DQN(state.shape, self.env.action_space.n,filename=args['model_filename']) 
-        self.target_net = DQN(state.shape, self.env.action_space.n,filename=args['model_filename'])
+        self.policy_net = DQN(state.shape, self.env.action_space.n,self.device,filename=args['model_filename']) 
+        self.target_net = DQN(state.shape, self.env.action_space.n,self.device,filename=args['model_filename'])
+        self.policy_net = self.policy_net.to(device=self.device)
+        self.target_net = self.target_net.to(device=self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        
         if (not args['train']) or self.load_model:
             print('loading trained model')
             self.policy_net.load_model()
@@ -119,11 +122,11 @@ class Agent_DQN():
 
         states, actions, next_states, rewards, dones  = self.replay_buffer()
 
-        states_v = Variable(torch.FloatTensor(np.float32(states)))
-        next_states_v = Variable(torch.FloatTensor(np.float32(next_states)), volatile=True)
-        actions_v = Variable(torch.LongTensor(actions))
-        rewards_v = Variable(torch.FloatTensor(rewards))
-        done = Variable(torch.FloatTensor(dones))
+        states_v = Variable(torch.FloatTensor(np.float32(states))).to(self.device)
+        next_states_v = Variable(torch.FloatTensor(np.float32(next_states)), volatile=True).to(self.device)
+        actions_v = Variable(torch.LongTensor(actions)).to(self.device)
+        rewards_v = Variable(torch.FloatTensor(rewards)).to(self.device)
+        done = Variable(torch.FloatTensor(dones)).to(self.device)
 
         state_action_values = self.policy_net(states_v).gather(1, actions_v.unsqueeze(1)).squeeze(1)
         next_state_values = self.target_net(next_states_v).max(1)[0]

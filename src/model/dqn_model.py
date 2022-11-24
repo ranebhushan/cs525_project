@@ -7,11 +7,11 @@ import torch
 import torch.autograd as autograd
 # from torchsummary import summary
 import math
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 class DQN(nn.Module):
-    def __init__(self, input_shape, num_actions, filename='test'):
+    def __init__(self, input_shape, num_actions, device, filename='test'):
         super(DQN, self).__init__()
-        
+        self.device = device
         self.input_shape = input_shape
         self.num_actions = num_actions
         self.filename = filename
@@ -31,7 +31,7 @@ class DQN(nn.Module):
         )
         
     def forward(self, x):
-        x = x.to(device)
+        x = x.to(self.device)
         op = self.features(x)
         op = op.reshape(x.size(0), -1)
         x = self.fc(op)

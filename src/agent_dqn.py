@@ -149,14 +149,14 @@ class Agent_DQN():
             EpisodeScore = 0
             tBegin = time.time()
             done = False
-            print(iEpisode)
+            # print(iEpisode)
             while not done:
 
                 action = self.make_action(state)    
                 nextState, reward, done, _, _ = self.env.step(action)
                 self.push(state, action, nextState, reward, done)
                 state = nextState
-                self.env.render()
+                # self.env.render()
                 if len(self.buffer_replay) > self.start_learning:
                     loss = self.optimize_model()
                     optimizer.zero_grad()

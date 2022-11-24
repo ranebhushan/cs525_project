@@ -9,9 +9,9 @@ buffer_size: 10000
 learning_rate: 0.001
 num_frames: 4
 target_update_frequency: 2500
-start_learning: 5000
+start_learning: 50
 model_save_frequency: 100
-load_model: True
+load_model: False
 clip_gradients: True
 reward_save_frequency: 30
 train_frequency: 4

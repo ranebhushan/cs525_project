@@ -15,6 +15,9 @@ from agent import Agent
 from model.dqn import DQN
 import csv
 import gc
+from torchsummary import summary
+from datetime import datetime
+
 """
 you can import any package and define any extra function as you need
 """
@@ -59,29 +62,32 @@ class Agent_DQN(Agent):
         self.clip = args['clip_gradients']
         self.reward_save_frequency = args['reward_save_frequency']
         self.train_frequency = args['train_frequency']
-        self.csv_file_name = args['csv_file_name']
-        try:
-            os.remove('logs/' + self.csv_file_name)
-        except FileNotFoundError:
-            pass
+        self.model_name = args['model_name']
+       
+
+        self.current_time = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+        self.directory_path = os.path.join(".", "weights", f"{self.model_name}-{self.current_time}")
+        self.csv_filename = os.path.join('logs', f'{self.model_name}-{self.current_time}.csv')
+
+        if(os.path.exists(self.directory_path) == False):
+            os.mkdir(self.directory_path)
+
         self.buffer_replay = deque(maxlen=self.buffer_size)
         self.scores = deque(maxlen=100)
         self.rewards = deque(maxlen=self.reward_save_frequency)
         
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        # self.device = torch.device('cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Initialise policy and target networks, set target network to eval mode
-        self.online_net = DQN(state.shape, self.env.action_space.n, filename=args['model_filename'])
-        self.target_net = DQN(state.shape, self.env.action_space.n, filename=args['model_filename'])
+        self.online_net = DQN(state.shape, self.env.action_space.n)
+
+        self.target_net = DQN(state.shape, self.env.action_space.n)
+
         self.online_net = self.online_net.to(device=self.device)
         self.target_net = self.target_net.to(device=self.device)
         self.target_net.eval()
         
         if (not args['train']) or self.load_model:
-            #you can load your model here
-            ###########################
-            # YOUR IMPLEMENTATION HERE #
             try:
                 self.online_net.load_model()
                 print('Loading trained model')
@@ -94,8 +100,8 @@ class Agent_DQN(Agent):
 
         # Set optimizer & loss function
         self.optim = optim.Adam(self.online_net.parameters(), lr=self.learning_rate)
-        self.loss = torch.nn.MSELoss()
-        #self.loss = torch.nn.SmoothL1Loss()
+        # self.loss = torch.nn.MSELoss()
+        self.loss = torch.nn.SmoothL1Loss()
 
     # Updates the target net to have same weights as policy net
     def replace_target_net(self, steps):
@@ -103,7 +109,6 @@ class Agent_DQN(Agent):
             self.target_net.load_state_dict(self.online_net.state_dict())
             print('Target network replaced')
             
-
     def init_game_setting(self):
         """
         Testing function will call this function at the begining of new game
@@ -153,8 +158,6 @@ class Agent_DQN(Agent):
         ###########################
         # YOUR IMPLEMENTATION HERE #
         self.buffer_replay.append(Transition(*args))
-        ###########################
-        
         
     def replay_buffer(self):
         """ You can add additional arguments as you need.
@@ -255,25 +258,43 @@ class Agent_DQN(Agent):
                 # Update target network
                 self.replace_target_net(self.steps)
 
+            if len(self.buffer_replay) > self.start_learning:
+                # print('Episode: ', i_episode, ' Score:', episode_score, ' Avg Score:',round(mean_score,4),' Epsilon: ', round(self.epsilon,4), ' Loss:', round(loss,4), ' Max Score:', max_score)
+                print('Episode: {:5d},\tScore: {:3.4f},\tAvg.Score: {:3.4f},\tEpislon: {:1.3f},\tLoss: {:8.4f},\tMax.Score: {:3.4f}'
+                .format(i_episode, episode_score, mean_score, self.epsilon, loss, max_score))
+                
+                csvData = [ datetime.now().strftime("%Y-%m-%d--%H-%M-%S"),
+                            i_episode,
+                            episode_score,
+                            self.epsilon,
+                            loss,
+                            max_score,
+                            mean_score
+                            ]
+
+                if (i_episode == 1):
+                    with open(self.csv_filename, mode='w', newline="") as csvFile:
+                        csvWriter = csv.writer(csvFile)
+                        csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
+                else:
+                    with open(self.csv_filename, mode='a') as csvFile:
+                        csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        csvWriter.writerow()
+            else:
+                print('Gathering Data . . .')
+
+            if i_episode % self.model_save_frequency == 0:
+                # Save model
+                # self.online_net.save_model()
+                torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
+
             i_episode += 1
             max_score = episode_score if episode_score > max_score else max_score
             self.scores.append(episode_score)
             self.rewards.append(episode_score)
             mean_score = np.mean(self.scores)
 
-            if len(self.buffer_replay) > self.start_learning:
-                print('Episode: ', i_episode, ' Score:', episode_score, ' Avg Score:',round(mean_score,4),' Epsilon: ', round(self.epsilon,4), ' Loss:', round(loss,4), ' Max Score:', max_score)
-                if i_episode % self.reward_save_frequency == 0:
-                    with open('logs/' + self.csv_file_name, mode='a') as dataFile:
-                        rewardwriter = csv.writer(dataFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        rewardwriter.writerow([np.mean(self.rewards)])
-            else:
-                print('Gathering Data . . .')
-
-            if i_episode % self.model_save_frequency == 0:
-                # Save model
-                self.online_net.save_model()
-
         print('======== Complete ========')
-        self.online_net.save_model()
+        # self.online_net.save_model()
+        torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
         ###########################

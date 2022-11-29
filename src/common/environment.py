@@ -17,12 +17,6 @@ class Environment():
             except KeyError:
                 pass
             self.env.configure(self.env_config)
-    
-    def seed(self, seed):
-        '''
-        Control the randomness of the environment
-        '''
-        self.env.seed(seed)
 
     def reset(self):
         observation, info = self.env.reset()

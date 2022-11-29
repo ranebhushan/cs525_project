@@ -45,5 +45,5 @@ class DQN(nn.Module):
 
     # Loads a model
     def load_model(self):
-        self.load_state_dict(torch.load('weights/' + self.filename + '.pth'))
+        self.load_state_dict(torch.load('weights/' + self.filename + '.pth')['model_state_dict'])
     

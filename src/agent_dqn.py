@@ -66,11 +66,15 @@ class Agent_DQN(Agent):
        
 
         self.current_time = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-        self.directory_path = os.path.join(".", "weights", f"{self.model_name}-{self.current_time}")
+        self.directory_path = os.path.join("weights", f"{self.model_name}-{self.current_time}")
         self.csv_filename = os.path.join('logs', f'{self.model_name}-{self.current_time}.csv')
 
         if(os.path.exists(self.directory_path) == False):
             os.mkdir(self.directory_path)
+
+        with open(self.csv_filename, mode='w', newline="") as csvFile:
+            csvWriter = csv.writer(csvFile)
+            csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
 
         self.buffer_replay = deque(maxlen=self.buffer_size)
         self.scores = deque(maxlen=100)
@@ -242,7 +246,7 @@ class Agent_DQN(Agent):
                 next_state, reward, done, _, _ = self.env.step(action)
                 self.push(current_state, action, reward, next_state, int(done))
                 current_state = next_state
-                self.env.render()
+                # self.env.render()
                 # print(len(self.buffer_replay))
                 if len(self.buffer_replay) > self.start_learning:
                     # Decay epsilon
@@ -271,22 +275,20 @@ class Agent_DQN(Agent):
                             max_score,
                             mean_score
                             ]
-
-                if (i_episode == 1):
-                    with open(self.csv_filename, mode='w', newline="") as csvFile:
-                        csvWriter = csv.writer(csvFile)
-                        csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
-                else:
-                    with open(self.csv_filename, mode='a') as csvFile:
-                        csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        csvWriter.writerow()
+                with open(self.csv_filename, mode='a') as csvFile:
+                    csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    csvWriter.writerow(csvData)
             else:
                 print('Gathering Data . . .')
 
-            if i_episode % self.model_save_frequency == 0:
+            if (i_episode > 1) and (i_episode % self.model_save_frequency == 0):
                 # Save model
                 # self.online_net.save_model()
-                torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
+                self.current_moment = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+                torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
+                print('-'*100)
+                print("Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
+                print('-'*100)
 
             i_episode += 1
             max_score = episode_score if episode_score > max_score else max_score
@@ -294,7 +296,8 @@ class Agent_DQN(Agent):
             self.rewards.append(episode_score)
             mean_score = np.mean(self.scores)
 
-        print('======== Complete ========')
+        print('='*50, 'Complete', '='*50)
         # self.online_net.save_model()
         torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
+        print("Final Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
         ###########################

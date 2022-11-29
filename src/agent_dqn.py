@@ -187,25 +187,25 @@ class Agent_DQN(Agent):
         if len(self.buffer_replay) < self.batch_size:
             return
         state, action, reward, next_state, done = self.replay_buffer()
-        q_values_online = self.online_net(state)
-        q_val_next = self.online_net(next_state).detach()
-        q_val_next_target = self.target_net(next_state).detach()
-        with torch.no_grad():
-            q_actions = torch.max(q_val_next, dim=1)[1].unsqueeze(1)
-            q_max = q_val_next_target.gather(dim=1, index=q_actions).squeeze()
-            q_target = reward + self.gamma * q_max * (1 - done)
+        # q_values_online = self.online_net(state)
+        # q_val_next = self.online_net(next_state).detach()
+        # q_val_next_target = self.target_net(next_state).detach()
+        # with torch.no_grad():
+        #     q_actions = torch.max(q_val_next, dim=1)[1].unsqueeze(1)
+        #     q_max = q_val_next_target.gather(dim=1, index=q_actions).squeeze()
+        #     q_target = reward + self.gamma * q_max * (1 - done)
         
-        q_val = q_values_online.gather(dim=1, index=action).squeeze()
+        # q_val = q_values_online.gather(dim=1, index=action).squeeze()
 
-        # # Calculate the value of the action taken
-        # q_eval = self.online_net(state).gather(1, action.unsqueeze(1)).squeeze(1)
-        # # Calculate best next action value from the target net and detach from graph
-        # q_next = self.target_net(next_state).detach().max(1)[0]
-        # # Using q_next and reward, calculate q_target
-        # # (1-done) ensures q_target is reward if transition is in a terminating state
-        # q_target = reward + q_next * self.gamma * (1 - done)
+        # Calculate the value of the action taken
+        q_eval = self.online_net(state).gather(dim=1, index=action).squeeze()
+        # Calculate best next action value from the target net and detach from graph
+        q_next = self.target_net(next_state).detach().max(1)[0]
+        # Using q_next and reward, calculate q_target
+        # (1-done) ensures q_target is reward if transition is in a terminating state
+        q_target = reward + q_next * self.gamma * (1 - done)
         # Compute the loss
-        loss = self.loss(q_val, q_target).to(self.device)
+        loss = self.loss(q_eval, q_target).to(self.device)
         # Perform backward propagation and optimization step
         self.optim.zero_grad()
         self.online_net.zero_grad()

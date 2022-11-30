@@ -4,13 +4,13 @@ epsilon_end: 0.05
 epsilon_decay: 1000000
 gamma: 0.99
 batch_size: 32
-buffer_size: 10000
+buffer_size: 100000
 learning_rate: 0.001
 num_frames: 4
 target_update_frequency: 2500
-start_learning: 50
-model_save_frequency: 100
-load_model: True
+start_learning: 50000
+model_save_frequency: 200
+load_model: False
 clip_gradients: True
 reward_save_frequency: 30
 train_frequency: 4

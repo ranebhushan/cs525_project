@@ -23,6 +23,6 @@
     "screen_height": 150,
     "show_trajectories": false,
     "simulation_frequency": 15,
-    "vehicles_count": 30,
+    "vehicles_count": 20,
     "vehicles_density": 2
 }

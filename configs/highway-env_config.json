@@ -6,8 +6,8 @@
     "centering_position": [0.3, 0.5],
     "collision_reward": -10,
     "controlled_vehicles": 1,
-    "duration": 50,
-    "lane_change_reward": 0,
+    "duration": 100,
+    "lane_change_reward": -1,
     "lanes_count": 4,
     "observation": {
         "observation_shape": [600, 150],
@@ -16,7 +16,7 @@
         "weights": [0.2989, 0.5870, 0.1140]   
     },
     "other_vehicles_type": "highway_env.vehicle.behavior.IDMVehicle",
-    "policy_frequency": 3,
+    "policy_frequency": 10,
     "reward_speed_range": [20, 30],
     "right_lane_reward": 0.1,
     "screen_width": 600,

@@ -25,4 +25,4 @@ module load cudnn8.5-cuda11.7/8.5.0.96
 
 echo "Running Python Code"
 
-python3 src/main.py --train_config_path=configs/DQN.yaml --env_config_path=configs/highway-env_config.json
+/home/yrpatil/RL_F22/cs525_project/rl_project/bin/python3.9 src/main.py --train_config_path=configs/DQN.yaml --env_config_path=configs/highway-env_config.json

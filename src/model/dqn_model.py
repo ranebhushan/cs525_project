@@ -5,7 +5,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch
 import torch.autograd as autograd
-# from torchsummary import summary
 import math
 
 class DQN(nn.Module):
@@ -23,7 +22,6 @@ class DQN(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
             nn.ReLU()
         )
-        # summary(self.features,self.input_shape)
         self.fc = nn.Sequential(
             nn.Linear(self.feature_size(), 512),
             nn.ReLU(),

@@ -7,7 +7,7 @@
     "collision_reward": -20,
     "controlled_vehicles": 1,
     "duration": 50,
-    "lane_change_reward": -1,
+    "lane_change_reward": -0.1,
     "lanes_count": 4,
     "observation": {
         "observation_shape": [600, 150],

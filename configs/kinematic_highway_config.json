@@ -1,11 +1,22 @@
 {
     "observation": 
     {
-        "type": "Kinematics"
+        "type": "Kinematics",
+        "features": ["presence","x","y","vx","cos_h","sin_h"],
+        "features_range": {
+            "x": [-100,100],
+            "y": [-100,100],
+            "vx": [-20,20],
+            "vy": [-20,20]
+        },
+        "absolute": false,
+        "order": "sorted"
     },
     "action": 
     {
-        "type": "DiscreteMetaAction"
+        "type": "ContinuousAction",
+        "longitudinal": true,
+        "lateral": true
     },
     "lanes_count": 4,
     "vehicles_count": 50,

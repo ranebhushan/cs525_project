@@ -2,7 +2,6 @@
 
 # Custom Ignore (includes environment, datasets)
 rl_project/*
-test/*
 __pycache__/
 weights/*
 logs/*
@@ -15,6 +14,8 @@ videos/*
 *.html
 *.pth
 *.tar
+*.err
+*.out
 
 # VSCode
 .vscode/*

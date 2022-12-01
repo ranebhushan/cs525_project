@@ -47,7 +47,7 @@ def test(agent, env, total_episodes=30, record_video=False):
         #frames = [state]
         terminated, truncated = False, False
         while not terminated and not truncated:
-            # env.render()
+            env.render()
             frames += 1
             action = agent.make_action(state, test=True)
             state, reward, terminated, truncated, _ = env.step(action)

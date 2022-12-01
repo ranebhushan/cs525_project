@@ -16,6 +16,7 @@ from model.dueling_dqn import DuelingDQN
 import csv
 import gc
 from datetime import datetime
+from torchsummary import summary
 
 """
 you can import any package and define any extra function as you need
@@ -62,6 +63,7 @@ class Agent_DDDQN(Agent):
         self.reward_save_frequency = args['reward_save_frequency']
         self.train_frequency = args['train_frequency']
         self.model_name = args['model_name']
+        self.trained_model_name = args['trained_model_folder_and_filename']
        
 
         self.current_time = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
@@ -83,7 +85,7 @@ class Agent_DDDQN(Agent):
 
         # Initialise policy and target networks, set target network to eval mode
         self.online_net = DuelingDQN(state.shape, self.env.action_space.n)
-
+        # summary(self.online_net, (4, 600, 150))
         self.target_net = DuelingDQN(state.shape, self.env.action_space.n)
 
         self.online_net = self.online_net.to(device=self.device)
@@ -91,8 +93,8 @@ class Agent_DDDQN(Agent):
         
         if (not args['train']) or self.load_model:
             try:
-                self.online_net.load_model()
-                print('Loading trained model')
+                self.online_net.load_state_dict(torch.load(os.path.join("weights", f'{self.trained_model_name}')))
+                print('Loaded trained model')
             except:
                 print('Loading trained model failed')
                 pass
@@ -226,11 +228,11 @@ class Agent_DDDQN(Agent):
             done = False
             episode_score = 0
             loss = 0
-            while not done:
+            while not done or truncated:
                 # Select and perform an action
                 action = self.make_action(current_state, False)
-                next_state, reward, done, _, _ = self.env.step(action)
-                self.push(current_state, action, reward, next_state, int(done))
+                next_state, reward, done, truncated, _ = self.env.step(action)
+                self.push(current_state, action, reward, next_state, int(done or truncated))
                 current_state = next_state
                 # self.env.render()
                 if len(self.buffer_replay) > self.start_learning:
@@ -263,7 +265,7 @@ class Agent_DDDQN(Agent):
                     csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                     csvWriter.writerow(csvData)
             else:
-                print('Gathering Data . . .')
+                print('Gathering Data: {0}/{1}'.format(len(self.buffer_replay),self.start_learning))
 
             if (i_episode > 1) and (i_episode % self.model_save_frequency == 0):
                 # Save model

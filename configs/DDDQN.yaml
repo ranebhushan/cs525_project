@@ -3,7 +3,7 @@ epsilon_start: 1.0
 epsilon_end: 0.05
 epsilon_decay: 1000000
 gamma: 0.99
-batch_size: 128
+batch_size: 32
 buffer_size: 100000
 learning_rate: 0.001
 target_update_frequency: 10000
@@ -15,4 +15,4 @@ reward_save_frequency: 30
 total_episodes: 10000000
 train_frequency: 4
 model_name: 'DDDQN'
-trained_model_path: 'test.pth'
+trained_model_folder_and_filename: 'DDDQN-2022-11-30--20-55-08/DDDQN-model-2022-11-30--20-21-13.pth'

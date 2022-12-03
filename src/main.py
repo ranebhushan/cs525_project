@@ -32,8 +32,8 @@ def main():
     train_args = load_yaml(args.train_config_path)
     env_args = json.load(open(args.env_config_path))
     env = Environment("highway-v0", env_args)
-    from agent_dqn import Agent_DQN
-    agent = Agent_DQN(env, train_args)
+    from agent_ddpg import Agent_DDPG
+    agent = Agent_DDPG(env, train_args)
     agent.train()
 
 if __name__ == '__main__':

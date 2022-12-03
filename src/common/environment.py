@@ -5,9 +5,12 @@ import highway_env
 class Environment():
     def __init__(self, env_name, env_config=None):
         self.env_config = env_config
+        print(env_config)
         self.env = gym.make(env_name)
         self.configure()
+        _, _ = self.reset()
         self.action_space = self.env.action_space
+        # print("ENV:",self.action_space)
         self.observation_space = self.env.observation_space
     
     def configure(self):
@@ -16,6 +19,7 @@ class Environment():
                 self.env_config['observation']['observation_shape'] = tuple(self.env_config['observation']['observation_shape'])
             except KeyError:
                 pass
+            # from IPython import embed; embed()
             self.env.configure(self.env_config)
     
     def seed(self, seed):
@@ -45,3 +49,6 @@ class Environment():
     
     def render(self):
         self.env.render()
+
+    def config(self):
+        return self.env.config

@@ -15,33 +15,47 @@ from agent import Agent
 from model.dqn import DQN
 import csv
 import gc
-from torchsummary import summary
 from datetime import datetime
-
-"""
-you can import any package and define any extra function as you need
-"""
-
-torch.manual_seed(595)
-np.random.seed(595)
-random.seed(595)
+from torchsummary import summary
 
 Transition = namedtuple('transition', ('state', 'action', 'reward', 'next_state', 'done'))
 
+class Memory(object):
+    def __init__(self, memory_size: int, device) -> None:
+        self.memory_size = memory_size
+        self.buffer = deque(maxlen=self.memory_size)
+        self.device = device
+
+    def push(self, *args) -> None:
+        self.buffer.append(Transition(*args))
+
+    def size(self):
+        return len(self.buffer)
+
+    def sample(self, batch_size: int):
+        if batch_size > len(self.buffer):
+            batch_size = len(self.buffer)
+        indexes = np.random.choice(np.arange(len(self.buffer)), size=batch_size, replace=False)
+        batch = [self.buffer[i] for i in indexes]
+        # Converts batch of transitions to transitions of batches
+        batch = Transition(*zip(*batch))
+        # Convert to tensors with correct dimensions
+        states = torch.FloatTensor(np.array(batch.state)).to(self.device)
+        next_states = torch.FloatTensor(np.array(batch.next_state)).to(self.device)
+        actions = torch.FloatTensor(np.array(batch.action)).unsqueeze(1).to(self.device)
+        rewards = torch.FloatTensor(np.array(batch.reward)).unsqueeze(1).to(self.device)
+        dones = torch.FloatTensor(np.array(batch.done)).unsqueeze(1).to(self.device)
+        del indexes
+        del batch
+        return states, actions, rewards, next_states, dones
+
+    def clear(self):
+        self.buffer.clear()
+
 class Agent_DQN(Agent):
     def __init__(self, env, args):
-        """
-        Initialize everything you need here.
-        For example: 
-            paramters for neural network  
-            initialize Q net and target Q net
-            parameters for repaly buffer
-            parameters for q-learning; decaying epsilon-greedy
-            ...
-        """
         super(Agent_DQN,self).__init__(env)
         ###########################
-        # YOUR IMPLEMENTATION HERE #
         gc.enable()
         state, _ = self.env.reset()
         self.epsilon_start = args['epsilon_start']
@@ -51,20 +65,22 @@ class Agent_DQN(Agent):
 
         self.gamma = args['gamma']
         self.batch_size = args['batch_size']
+        self.render = args['render_train']
         self.buffer_size = args['buffer_size']
         self.learning_rate = args['learning_rate']
         self.num_frames = state.shape[0]
         self.steps = 0
         self.target_update_frequency = args['target_update_frequency']
         self.start_learning = args['start_learning']
+        self.total_episodes = args['total_episodes']
         self.model_save_frequency = args['model_save_frequency']
         self.load_model = args['load_model']
         self.clip = args['clip_gradients']
         self.reward_save_frequency = args['reward_save_frequency']
         self.train_frequency = args['train_frequency']
         self.model_name = args['model_name']
+        self.trained_model_name = args['trained_model_folder_and_filename']
        
-
         self.current_time = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
         self.directory_path = os.path.join("weights", f"{self.model_name}-{self.current_time}")
         self.csv_filename = os.path.join('logs', f'{self.model_name}-{self.current_time}.csv')
@@ -76,25 +92,23 @@ class Agent_DQN(Agent):
             csvWriter = csv.writer(csvFile)
             csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
 
-        self.buffer_replay = deque(maxlen=self.buffer_size)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cpu')
+        self.buffer_replay = Memory(self.buffer_size, self.device)
         self.scores = deque(maxlen=100)
         self.rewards = deque(maxlen=self.reward_save_frequency)
-        
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-        # Initialise policy and target networks, set target network to eval mode
+        # Initialise policy and target networks
         self.online_net = DQN(state.shape, self.env.action_space.n)
-
+        # summary(self.online_net, (4, 600, 150))
         self.target_net = DQN(state.shape, self.env.action_space.n)
 
         self.online_net = self.online_net.to(device=self.device)
         self.target_net = self.target_net.to(device=self.device)
-        self.target_net.eval()
         
         if (not args['train']) or self.load_model:
             try:
-                self.online_net.load_model()
-                print('Loading trained model')
+                self.online_net.load_state_dict(torch.load(os.path.join("weights", f'{self.trained_model_name}')))
+                print('Loaded trained model')
             except:
                 print('Loading trained model failed')
                 pass
@@ -104,7 +118,6 @@ class Agent_DQN(Agent):
 
         # Set optimizer & loss function
         self.optim = optim.Adam(self.online_net.parameters(), lr=self.learning_rate)
-        # self.loss = torch.nn.MSELoss()
         self.loss = torch.nn.SmoothL1Loss()
 
     # Updates the target net to have same weights as policy net
@@ -126,89 +139,38 @@ class Agent_DQN(Agent):
         pass
     
     def state_to_tensor(self, state):
-        state_t = torch.as_tensor(state, dtype=torch.float32, device=self.device)
+        state_t = torch.FloatTensor(state).unsqueeze(0).to(self.device)
         return state_t
 
     def make_action(self, observation, test=False):
-        """
-        Return predicted action of your agent
-        Input:
-            observation: np.array
-                stack 4 last preprocessed frames, shape: (84, 84, 4)
-        Return:
-            action: int
-                the predicted action from trained model
-        """
         ###########################
-        # YOUR IMPLEMENTATION HERE #
         if random.random() > self.epsilon or test:
             observation_t = self.state_to_tensor(observation)
-            q_values = self.online_net(observation_t.unsqueeze(0))
-            max_q_index = torch.argmax(q_values, dim=1)
+            with torch.no_grad():
+                q_values = self.online_net(observation_t)
+                max_q_index = torch.argmax(q_values, dim=1)
             action = max_q_index.item()
         else:
-            action = random.randint(0, self.env.action_space.n - 1)
+            action = self.env.get_random_action()
         ###########################
         return action
-    
-    def push(self, *args):
-        """ You can add additional arguments as you need. 
-        Push new data to buffer and remove the old one if the buffer is full.
-        
-        Hints:
-        -----
-            you can consider deque(maxlen = 10000) list
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        self.buffer_replay.append(Transition(*args))
-        
-    def replay_buffer(self):
-        """ You can add additional arguments as you need.
-        Select batch from buffer.
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        batch = random.sample(self.buffer_replay, self.batch_size)
-        # Converts batch of transitions to transitions of batches
-        batch = Transition(*zip(*batch))
-        # Convert to tensors with correct dimensions
-        state = torch.cat([self.state_to_tensor(s).unsqueeze(0) for s in batch.state]).float().to(self.device)
-        action = torch.tensor(batch.action).view(-1,1).to(self.device)
-        reward = torch.tensor(batch.reward).float().to(self.device)
-        next_state = torch.cat([self.state_to_tensor(s).unsqueeze(0) for s in batch.next_state]).float().to(self.device)
-        done = torch.tensor(batch.done).float().to(self.device)
-
-        del batch
-        ###########################
-        return state, action, reward, next_state, done
 
     def optimize_model(self):
-        if len(self.buffer_replay) < self.batch_size:
+        if self.buffer_replay.size() < self.batch_size:
             return
-        state, action, reward, next_state, done = self.replay_buffer()
-        # q_values_online = self.online_net(state)
-        # q_val_next = self.online_net(next_state).detach()
-        # q_val_next_target = self.target_net(next_state).detach()
-        # with torch.no_grad():
-        #     q_actions = torch.max(q_val_next, dim=1)[1].unsqueeze(1)
-        #     q_max = q_val_next_target.gather(dim=1, index=q_actions).squeeze()
-        #     q_target = reward + self.gamma * q_max * (1 - done)
-        
-        # q_val = q_values_online.gather(dim=1, index=action).squeeze()
-
+        states, actions, rewards, next_states, dones = self.buffer_replay.sample(self.batch_size)
+        with torch.no_grad():
+            # Calculate best next action value from the target net and detach from graph
+            q_max = torch.max(self.target_net(next_states), dim=1, keepdim=True)[0]
+            # Using q_next and reward, calculate q_target
+            # (1-done) ensures q_target is reward if transition is in a terminating state
+            q_target = rewards + self.gamma * q_max * (1 - dones)
         # Calculate the value of the action taken
-        q_eval = self.online_net(state).gather(dim=1, index=action).squeeze()
-        # Calculate best next action value from the target net and detach from graph
-        q_next = self.target_net(next_state).detach().max(1)[0]
-        # Using q_next and reward, calculate q_target
-        # (1-done) ensures q_target is reward if transition is in a terminating state
-        q_target = reward + q_next * self.gamma * (1 - done)
+        q_pred = self.online_net(states).gather(1, actions.long())
         # Compute the loss
-        loss = self.loss(q_eval, q_target).to(self.device)
+        loss = self.loss(q_pred, q_target).to(self.device)
         # Perform backward propagation and optimization step
         self.optim.zero_grad()
-        self.online_net.zero_grad()
         loss.backward()
 
         if self.clip:
@@ -225,32 +187,30 @@ class Agent_DQN(Agent):
         self.steps += 1
 
     def train(self):
-        """
-        Implement your training algorithm here
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
         mean_score = 0
         max_score = 0
         i_episode = 0
 
-        while mean_score < 60:
+        while i_episode <= self.total_episodes:
             # Initialize the environment and state
             current_state, _ = self.env.reset()
             done = False
+            truncated = False
             episode_score = 0
             loss = 0
-            while not done:
-                # Select and perform an action
+            while not (done or truncated):
+                 # Select and perform an action
                 action = self.make_action(current_state, False)
-                next_state, reward, done, _, _ = self.env.step(action)
-                self.push(current_state, action, reward, next_state, int(done))
+                next_state, reward, done, truncated, _ = self.env.step(action)
+                self.buffer_replay.push(current_state, action, reward, next_state, int(done or truncated))
                 current_state = next_state
-                # self.env.render()
-                # print(len(self.buffer_replay))
-                if len(self.buffer_replay) > self.start_learning:
+                if self.render:
+                    self.env.render()
+                if self.buffer_replay.size() > self.start_learning:
                     # Decay epsilon
                     self.dec_eps()
+                    # Update target network
+                    self.replace_target_net(self.steps)
                     if self.steps % self.train_frequency == 0:
                         loss = self.optimize_model()
                 else:
@@ -259,11 +219,8 @@ class Agent_DQN(Agent):
                 
                 # Add the reward to the previous score
                 episode_score += reward
-                # Update target network
-                self.replace_target_net(self.steps)
 
-            if len(self.buffer_replay) > self.start_learning:
-                # print('Episode: ', i_episode, ' Score:', episode_score, ' Avg Score:',round(mean_score,4),' Epsilon: ', round(self.epsilon,4), ' Loss:', round(loss,4), ' Max Score:', max_score)
+            if self.buffer_replay.size() > self.start_learning:
                 print('Episode: {:5d},\tScore: {:3.4f},\tAvg.Score: {:3.4f},\tEpislon: {:1.3f},\tLoss: {:8.4f},\tMax.Score: {:3.4f}'
                 .format(i_episode, episode_score, mean_score, self.epsilon, loss, max_score))
                 
@@ -279,11 +236,10 @@ class Agent_DQN(Agent):
                     csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                     csvWriter.writerow(csvData)
             else:
-                print('Gathering Data . . .')
+                print('Gathering Data: {0}/{1}'.format(self.buffer_replay.size(),self.start_learning))
 
             if (i_episode > 1) and (i_episode % self.model_save_frequency == 0):
                 # Save model
-                # self.online_net.save_model()
                 self.current_moment = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
                 torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
                 print('-'*100)
@@ -297,7 +253,6 @@ class Agent_DQN(Agent):
             mean_score = np.mean(self.scores)
 
         print('='*50, 'Complete', '='*50)
-        # self.online_net.save_model()
         torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
         print("Final Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
         ###########################

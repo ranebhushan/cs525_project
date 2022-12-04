@@ -9,9 +9,9 @@
 #SBATCH -t 167:59:59
 #SBATCH -o slurm_outputs/rljob_%j.out
 #SBATCH --error slurm_outputs/rljob_%j.err
-#SBATCH -J DDDQN_RW
+#SBATCH -J DQN
 
 echo "RL Job running on $(hostname)"
 echo "Running Python Code"
 
-python3 src/main_dddqn.py --train_config_path=configs/DDDQN.yaml --env_config_path=configs/highway-env_config.json
+python3 src/main_dqn.py --train_config_path=configs/DQN.yaml --env_config_path=configs/highway-env_config.json

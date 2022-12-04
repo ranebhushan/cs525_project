@@ -1,4 +1,5 @@
 train: True
+render_train: False
 epsilon_start: 1.0
 epsilon_end: 0.05
 epsilon_decay: 10000

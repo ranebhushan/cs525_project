@@ -65,6 +65,7 @@ class Agent_DDDQN(Agent):
 
         self.gamma = args['gamma']
         self.batch_size = args['batch_size']
+        self.render = args['render_train']
         self.buffer_size = args['buffer_size']
         self.learning_rate = args['learning_rate']
         self.num_frames = state.shape[0]
@@ -204,13 +205,14 @@ class Agent_DDDQN(Agent):
                 next_state, reward, done, truncated, _ = self.env.step(action)
                 self.buffer_replay.push(current_state, action, reward, next_state, int(done or truncated))
                 current_state = next_state
-                self.env.render()
+                if self.render:
+                    self.env.render()
                 if self.buffer_replay.size() > self.start_learning:
                     # Decay epsilon
                     self.dec_eps()
                     # Update target network
                     self.replace_target_net(self.steps)
-                    if self.steps % self.train_frequency == 0: # Need to check if its required
+                    if self.steps % self.train_frequency == 0:
                         loss = self.optimize_model()
                 else:
                     i_episode = 0

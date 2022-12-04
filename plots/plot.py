@@ -1,35 +1,50 @@
 import csv
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
 sys.path.insert(1, os.getcwd() + '/logs')
 
-file_name = 'DDDQN-2022-11-30--02-48-34.csv'
+
+# File format: [Date Time,Episode,Reward,Epsilon,Loss,Max. Reward,Mean Reward]
+
+file_name = 'DDDQN-2022-12-03--18-44-20.csv'
 
 def read_csv(filename):
     logs_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/logs/'
-    data = list()
-    with open(logs_path + filename, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-        for row in reader:
-            data.append([row])
-    return data
+    df = pd.read_csv(logs_path + filename, sep=',', header=0)
+    return df
 
 def plot_loss(data):
-    pass
+    plt.plot(data['Episode'].to_numpy(), data['Loss'].to_numpy())
+    plt.title("Episode v/s Loss")
+    plt.xlabel("Episode")
+    plt.ylabel("Loss")
+    plt.show()
 
-def plot_mean_reward():
-    pass
+def plot_mean_reward(data):
+    plt.plot(data['Episode'].to_numpy(), data['Mean Reward'].to_numpy()) 
+    plt.title("Episode v/s Mean Reward")
+    plt.xlabel("Episode")
+    plt.ylabel("Mean Reward")
+    plt.show() 
 
-def plot_reward():
-    pass
+def plot_reward(data):
+    plt.plot(data['Episode'].to_numpy(), data['Reward'].to_numpy()) 
+    plt.title("Episode v/s Reward")
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")    
+    plt.show() 
 
-def plot_epsilon():
-    pass
+def plot_epsilon(data):
+    plt.plot(data['Episode'].to_numpy(), data['Epsilon'].to_numpy()) 
+    plt.title("Episode v/s Epsilon")
+    plt.xlabel("Episode")
+    plt.ylabel("Epsilon")    
+    plt.show() 
 
 def main():
     data = read_csv(file_name)
-    from IPython import embed; embed()
     plot_mean_reward(data)
     plot_reward(data)
     plot_loss(data)

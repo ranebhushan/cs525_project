@@ -7,6 +7,7 @@ class Environment():
         self.env_config = env_config
         self.env = gym.make(env_name)
         self.configure()
+        observation, info = self.env.reset()
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
     

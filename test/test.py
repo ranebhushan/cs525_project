@@ -77,7 +77,7 @@ def test(agent, env, total_episodes=30, record_video=False):
 def run(env_args, test_args):
     env = Environment("highway-v0", env_args)
     agent = None
-    if args['model_name'] == 'DDDQN':
+    if test_args['model_name'] == 'DDDQN':
         agent = Agent_DDDQN(env, test_args)
     else:
         agent = Agent_DQN(env, test_args)

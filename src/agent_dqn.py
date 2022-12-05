@@ -85,12 +85,13 @@ class Agent_DQN(Agent):
         self.directory_path = os.path.join("weights", f"{self.model_name}-{self.current_time}")
         self.csv_filename = os.path.join('logs', f'{self.model_name}-{self.current_time}.csv')
 
-        if(os.path.exists(self.directory_path) == False):
-            os.mkdir(self.directory_path)
+        if args['train']:
+            if(os.path.exists(self.directory_path) == False):
+                os.mkdir(self.directory_path)
 
-        with open(self.csv_filename, mode='w', newline="") as csvFile:
-            csvWriter = csv.writer(csvFile)
-            csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
+            with open(self.csv_filename, mode='w', newline="") as csvFile:
+                csvWriter = csv.writer(csvFile)
+                csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # self.device = torch.device('cpu')

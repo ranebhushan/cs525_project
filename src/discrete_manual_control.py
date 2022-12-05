@@ -8,9 +8,10 @@ import keyboard
 
 env = gym.make('highway-v0')
 
-config = json.load(open("highway-env_config.json"))
-config['observation']['observation_shape'] = tuple(config['observation']['observation_shape'])
-env.configure(config)
+# config = json.load(open("../configs/highway-env_config.json"))
+# config['observation']['observation_shape'] = tuple(config['observation']['observation_shape'])
+# env.configure(config)
+
 env.reset()
 
 # ACTIONS_ALL = {
@@ -20,32 +21,31 @@ env.reset()
 #         3: 'FASTER',
 #         4: 'SLOWER'
 #     }
-
-
-
-# while True : pass
 a = 0
 while True:
-#   done = truncated = False
-#   obs, info = env.reset()
-#   while not (done or truncated):
-    if keyboard.on_press('left'):
+  done = truncated = False
+  obs, info = env.reset()
+  action = env.action_type.actions_indexes["IDLE"]
+  while not (done or truncated):
+    if keyboard.is_pressed('a'):
         action = env.action_type.actions_indexes["LANE_LEFT"]
         print(a, "left")
         a+=1
-    elif keyboard.on_press('right'):
+    elif keyboard.is_pressed('d'):
         action = env.action_type.actions_indexes["LANE_RIGHT"]
         print(a, "right")
         a+=1
-    elif keyboard.on_press('up'):
+    elif keyboard.is_pressed('w'):
         action = env.action_type.actions_indexes["FASTER"]
-        print(a, "up")
+        print(a, "faster")
         a+=1
-    elif keyboard.on_press('down'):
+    elif keyboard.is_pressed('s'):
         action = env.action_type.actions_indexes["SLOWER"]
-        print(a, "down")
+        print(a, "slower")
         a+=1
     else:
         action = env.action_type.actions_indexes["IDLE"]
-    # obs, reward, done, truncated, info = env.step(action)
-    # env.render()
+        print(a, "idle")
+        a+=1
+    obs, reward, done, truncated, info = env.step(action)
+    env.render()

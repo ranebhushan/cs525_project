@@ -3,10 +3,14 @@ epsilon_start: 1.0
 epsilon_end: 0.05
 epsilon_decay: 1000000
 gamma: 0.99
-batch_size: 32
-buffer_size: 10000
-learning_rate: 0.001
+batch_size: 64
+buffer_size: 1000000
+learning_rate_actor: 0.0001
+learning_rate_critic: 0.001
+fc1_dims: 400
+fc2_dims: 300 
 num_frames: 4
+tau: 0.001
 target_update_frequency: 2500
 start_learning: 50
 model_save_frequency: 100

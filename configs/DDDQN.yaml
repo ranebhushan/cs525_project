@@ -1,5 +1,5 @@
-train: False
-render_train: False
+train: True
+render: False
 epsilon_start: 1.0
 epsilon_end: 0.05
 epsilon_decay: 10000

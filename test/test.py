@@ -1,15 +1,15 @@
 import argparse
 import numpy as np
-import sys, os
-sys.path.insert(1, os.getcwd() + '/src')
-from common.environment import Environment
 import time
 from gym.wrappers.monitoring import video_recorder
 from tqdm import tqdm
 import json
+import yaml
+import sys, os
+sys.path.insert(1, os.getcwd() + '/src')
+from common.environment import Environment
 from agent_dddqn import Agent_DDDQN
 from agent_dqn import Agent_DQN
-import yaml
 
 def parse():
     parser = argparse.ArgumentParser(description="DS595/CS525 RL Project4")
@@ -33,7 +33,7 @@ def load_yaml(yaml_path):
     return dict_args
 
 
-def test(agent, env, total_episodes=30, record_video=False):
+def test(agent, env, total_episodes=30, record_video=False, render=False):
     rewards = []
     if record_video:
         vid = video_recorder.VideoRecorder(env=env.env, path="videos/test_vid.mp4")
@@ -48,12 +48,12 @@ def test(agent, env, total_episodes=30, record_video=False):
         #frames = [state]
         terminated, truncated = False, False
         while not terminated and not truncated:
-            env.render()
+            if render:
+                env.render()
             frames += 1
             action = agent.make_action(state, test=True)
             state, reward, terminated, truncated, _ = env.step(action)
             episode_reward += reward
-            # env.render()
             #frames.append(state)
             if record_video:
                 vid.capture_frame()
@@ -79,9 +79,12 @@ def run(env_args, test_args):
     agent = None
     if test_args['model_name'] == 'DDDQN':
         agent = Agent_DDDQN(env, test_args)
-    else:
+    elif test_args['model_name'] == 'DQN':
         agent = Agent_DQN(env, test_args)
-    test(agent, env, total_episodes=100, record_video=False)
+    else:
+        print('Invalid Model Name')
+        sys.exit()
+    test(agent, env, total_episodes=100, record_video=False, render=test_args['render'])
 
 
 if __name__ == '__main__':

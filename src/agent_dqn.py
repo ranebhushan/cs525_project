@@ -65,7 +65,7 @@ class Agent_DQN(Agent):
 
         self.gamma = args['gamma']
         self.batch_size = args['batch_size']
-        self.render = args['render_train']
+        self.render = args['render']
         self.buffer_size = args['buffer_size']
         self.learning_rate = args['learning_rate']
         self.num_frames = state.shape[0]

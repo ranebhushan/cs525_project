@@ -1,12 +1,17 @@
 import argparse
 import yaml
 from common.environment import Environment
+from agent_dddqn import Agent_DDDQN
+from agent_dqn import Agent_DQN
+import sys, os
+sys.path.insert(1, os.getcwd() + '/test')
+from test import test
 import json
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_config_path",
+    parser.add_argument("--agent_config_path",
                         type=str,
                         default="configs/DQN.yaml",
                         help="path for the training parameters")
@@ -29,12 +34,22 @@ def load_yaml(yaml_path):
 
 def main():
     args = parse_args()
-    train_args = load_yaml(args.train_config_path)
+    agent_args = load_yaml(args.agent_config_path)
     env_args = json.load(open(args.env_config_path))
     env = Environment("highway-v0", env_args)
-    from agent_dqn import Agent_DQN
-    agent = Agent_DQN(env, train_args)
-    agent.train()
+    agent = None
+    if agent_args['model_name'] == 'DDDQN':
+        agent = Agent_DDDQN(env, agent_args)
+    elif agent_args['model_name'] == 'DQN':
+        agent = Agent_DQN(env, agent_args)
+    else:
+        print('Invalid Model Name')
+        sys.exit()
+        
+    if agent_args['train']:
+        agent.train()
+    else:
+        test(agent, env, total_episodes=100, record_video=False, render=agent_args['render'])
 
 if __name__ == '__main__':
     main()

@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from agent import Agent
-from model.dqn import DQN
+from model.dueling_dqn import DuelingDQN
 import csv
 import gc
 from datetime import datetime
@@ -52,9 +52,9 @@ class Memory(object):
     def clear(self):
         self.buffer.clear()
 
-class Agent_DQN(Agent):
+class Agent_DDDQN(Agent):
     def __init__(self, env, args):
-        super(Agent_DQN,self).__init__(env)
+        super(Agent_DDDQN,self).__init__(env)
         ###########################
         gc.enable()
         state, _ = self.env.reset()
@@ -99,9 +99,9 @@ class Agent_DQN(Agent):
         self.scores = deque(maxlen=100)
         self.rewards = deque(maxlen=self.reward_save_frequency)
         # Initialise policy and target networks
-        self.online_net = DQN(state.shape, self.env.action_space.n)
+        self.online_net = DuelingDQN(state.shape, self.env.action_space.n)
         # summary(self.online_net, (4, 600, 150))
-        self.target_net = DQN(state.shape, self.env.action_space.n)
+        self.target_net = DuelingDQN(state.shape, self.env.action_space.n)
 
         self.online_net = self.online_net.to(device=self.device)
         self.target_net = self.target_net.to(device=self.device)
@@ -129,7 +129,7 @@ class Agent_DQN(Agent):
             
     def init_game_setting(self):
         """
-        Testing function will call this function at the begining of new game
+        Testing function will call this function at the beginning of new game
         Put anything you want to initialize if necessary.
         If no parameters need to be initialized, you can leave it as blank.
         """
@@ -161,15 +161,16 @@ class Agent_DQN(Agent):
             return
         states, actions, rewards, next_states, dones = self.buffer_replay.sample(self.batch_size)
         with torch.no_grad():
-            # Calculate best next action value from the target net and detach from graph
-            q_max = torch.max(self.target_net(next_states), dim=1, keepdim=True)[0]
-            # Using q_next and reward, calculate q_target
+            q_next_target = self.target_net(next_states)
+            q_next_online = self.online_net(next_states)
+            online_max_action = torch.argmax(q_next_online, dim=1, keepdim=True)
+            q_max = q_next_target.gather(1, online_max_action.long())
+            # Using q_max and reward, calculate q_target
             # (1-done) ensures q_target is reward if transition is in a terminating state
             q_target = rewards + self.gamma * q_max * (1 - dones)
-        # Calculate the value of the action taken
         q_pred = self.online_net(states).gather(1, actions.long())
         # Compute the loss
-        loss = self.loss(q_pred, q_target).to(self.device)
+        loss = self.loss(q_pred, q_target)
         # Perform backward propagation and optimization step
         self.optim.zero_grad()
         loss.backward()
@@ -188,10 +189,10 @@ class Agent_DQN(Agent):
         self.steps += 1
 
     def train(self):
+        ###########################
         mean_score = 0
         max_score = 0
         i_episode = 0
-
         while i_episode <= self.total_episodes:
             # Initialize the environment and state
             current_state, _ = self.env.reset()
@@ -200,7 +201,7 @@ class Agent_DQN(Agent):
             episode_score = 0
             loss = 0
             while not (done or truncated):
-                 # Select and perform an action
+                # Select and perform an action
                 action = self.make_action(current_state, False)
                 next_state, reward, done, truncated, _ = self.env.step(action)
                 self.buffer_replay.push(current_state, action, reward, next_state, int(done or truncated))

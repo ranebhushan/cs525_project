@@ -15,5 +15,5 @@ clip_gradients: True
 reward_save_frequency: 30
 total_episodes: 5000
 train_frequency: 4
-model_name: 'DQN'
-trained_model_folder_and_filename: 'test.pth'
+model_name: 'DDDQN'
+trained_model_folder_and_filename: 'DDDQN-2022-12-03--18-44-20/DDDQN-model-2022-12-04--00-20-34.pth'

@@ -1,7 +1,7 @@
 import highway_env
 import gym
 import numpy as np
-from ppo_highway import PPO, Memory
+from ppo_agent import PPO, Memory
 
 
 if __name__=='__main__':

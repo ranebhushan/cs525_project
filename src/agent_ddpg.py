@@ -89,10 +89,10 @@ class Agent_DDPG(Agent):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.memory = ReplayBuffer(self.buffer_size,self.input_dims,self.n_actions)
         self.noise = OUActionNoise(mu=np.zeros(self.n_actions))
-        self.actor = ActorNetwork(self.learning_rate_actor, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "actor",filename='actor_ddpg')
-        self.critic = CriticNetwork(self.learning_rate_critic, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "critic",filename='critic_ddpg')
-        self.target_actor = ActorNetwork(self.learning_rate_actor, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "target_actor",filename='target_actor_ddpg')
-        self.target_critic = CriticNetwork(self.learning_rate_critic, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "target_critic",filename='target_critic_ddpg')
+        self.actor = ActorNetwork(self.learning_rate_actor, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "actor",filename='actor_ddpg',directory_path=self.directory_path)
+        self.critic = CriticNetwork(self.learning_rate_critic, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "critic",filename='critic_ddpg',directory_path=self.directory_path)
+        self.target_actor = ActorNetwork(self.learning_rate_actor, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "target_actor",filename='target_actor_ddpg',directory_path=self.directory_path)
+        self.target_critic = CriticNetwork(self.learning_rate_critic, self.input_dims, self.fc1_dims, self.fc2_dims, self.n_actions, name = "target_critic",filename='target_critic_ddpg',directory_path=self.directory_path)
         self.actor = self.actor.to(device=self.device)
         self.critic = self.critic.to(device=self.device)
         self.target_actor = self.target_actor.to(device=self.device)
@@ -111,7 +111,7 @@ class Agent_DDPG(Agent):
         mu_prime = mu + torch.as_tensor(self.noise(),dtype = torch.float, device = self.device)
         # print(mu_prime)
         self.actor.train()
-        return mu_prime.to(self.device).detach().numpy()[0]
+        return mu_prime.cpu().detach().numpy()[0]
     
     def remember(self, state, action, reward, next_state , done):
         self.memory.store_transition(state,action, reward, next_state, done)
@@ -184,7 +184,7 @@ class Agent_DDPG(Agent):
         max_score = 0
         i_episode = 0
 
-        while mean_score < 2000:
+        for i_episode in range(2500):
             # Initialize the environment and state
             current_state= self.env.reset()
             current_state=current_state[0].reshape(current_state[0].shape[0]*current_state[0].shape[1],)
@@ -211,7 +211,7 @@ class Agent_DDPG(Agent):
                 self.learn()
                 # self.push(current_state, action, reward, next_state, int(done))
                 current_state = next_state
-                self.env.render()
+                # self.env.render()
                 # Add the reward to the previous score
                 episode_score += reward
                 # Update target network
@@ -246,7 +246,7 @@ class Agent_DDPG(Agent):
                 print("Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
                 print('-'*100)
 
-            i_episode += 1
+            # i_episode += 1
             max_score = episode_score if episode_score > max_score else max_score
             self.scores.append(episode_score)
             self.rewards.append(episode_score)

@@ -52,7 +52,7 @@ class ActorNetwork(torch.nn.Module):
     
     def save_checkpoint(self):
         print('...........saving checkpoint...................')
-        torch.save( self.state_dict(), os.path.join('.', self.checkpoint_dir, f'{self.filename}-{self.name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
+        torch.save( self.state_dict(), os.path.join(self.checkpoint_dir, f'{self.filename}-{self.name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
     
     def load_checkpoint(self):
         print('.............loading checkpoint..................')
@@ -99,7 +99,7 @@ class CriticNetwork(torch.nn.Module):
         state_val = F.relu(state_val)
         state_val = self.fc2(state_val)
         state_val = self.bn2(state_val)
-        action_value = self.action_value(action)
+        action_value = F.relu(self.action_value(action))
         state_action_value = F.relu(torch.add(state_val, action_value))
         state_action_value = self.q(state_action_value)
         return state_action_value

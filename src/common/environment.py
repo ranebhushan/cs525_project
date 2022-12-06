@@ -46,3 +46,7 @@ class Environment():
     
     def render(self):
         self.env.render()
+    
+    def action_type(self, action):
+        action = self.env.action_type.actions_indexes[action]
+        return action

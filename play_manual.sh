@@ -1,0 +1,1 @@
+sudo python3 src/discrete_manual_control.py --env_config_path=configs/highway-env_config.json

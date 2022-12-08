@@ -1,5 +1,5 @@
-train: True
-render: False
+train: True  # To run training, set this to true and for testing set this to false
+render: False # To render the visualization while training or testing
 epsilon_start: 1.0
 epsilon_end: 0.05
 epsilon_decay: 10000
@@ -15,5 +15,5 @@ clip_gradients: True
 reward_save_frequency: 30
 total_episodes: 5000
 train_frequency: 4
-model_name: 'DQN'
-trained_model_folder_and_filename: 'test.pth'
+model_name: 'DQN' # Name of the algorithm
+trained_model_folder_and_filename: 'test.pth' # Folder and filename of the trained model for testing

@@ -9,20 +9,8 @@
 #SBATCH -t 167:59:59
 #SBATCH -o slurm_outputs/rljob_%j.out
 #SBATCH --error slurm_outputs/rljob_%j.err
-#SBATCH -J rl_project
-#SBATCH --mail-user=barane@wpi.edu
-#SBATCH --mail-type=ALL
+#SBATCH -J DDDQN
 
-echo "RL Job running on $(hostname)"
+echo "Running python code on $(hostname) with algorithm $1"
 
-echo "Loading Python Virtual Environment"
-
-source ~/cs525_project/rl_project/bin/activate
-
-module load python/3.9.12/uabo2y2
-module load cuda11.7/toolkit/11.7.1
-module load cudnn8.5-cuda11.7/8.5.0.96
-
-echo "Running Python Code"
-
-python3 src/main.py --train_config_path=configs/DQN.yaml --env_config_path=configs/highway-env_config.json
+python3 src/main.py --agent_config_path=configs/$1.yaml --env_config_path=configs/highway-env_config.json

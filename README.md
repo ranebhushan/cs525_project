@@ -80,9 +80,9 @@ This section shows the output performance of the algorithms.
 
 ### Videos
 
-| **DQN** <video width="261" height="96" controls><source src="docs/videos/DQN-2022-12-06_15.23.13.mp4" type="video/mp4"></video> | **DDDQN** <video width="261" height="96" controls><source src="docs/videos/DDDQN-2022-12-06_15.33.44.mp4" type="video/mp4"></video> |
+| **DQN** https://user-images.githubusercontent.com/44564963/206376512-077cf56a-ef74-4dc5-8aef-c9a5ca7aef8e.mp4 | **DDDQN** https://user-images.githubusercontent.com/44564963/206376630-006774c7-4f95-4b37-b996-64f93856dc52.mp4 |
 |-----------------|------------------|
-| **DDPG**  <video width="261" height="96" controls><source src="docs/videos/DDPG-2022-12-06_15.32.25.mp4" type="video/mp4"></video> | **PPO**  <video width="261" height="96" controls><source src="docs/videos/PPO-2022-12-06_16.09.37.mp4" type="video/mp4"></video>   |
+| **DDPG**  https://user-images.githubusercontent.com/44564963/206376766-f89ee071-7fe4-4bf3-aff2-a2c8fd99b128.mp4 | **PPO**  https://user-images.githubusercontent.com/44564963/206376797-ee0210c7-a7c2-4efb-9374-20a1def8a64e.mp4   |
 
 https://github.com/ranebhushan/cs525_project/blob/main/docs/videos/DDDQN-2022-12-06_15.33.44.mp4
 

@@ -6,17 +6,17 @@ This repository implements deep reinforcement learning algorithms for decision m
 
 ## Contents
 - Deep Reinforcement Learning for Decision Making in Autonomous Driving
-  - [1. Team Members](#1-team-members)
-  - [2. Dependencies](#2-dependencies)
-  - [3. Repository Setup](#3-repository-setup)
-  - [4. Setting The Configurations](#4-setting-the-configurations)
-    - [i.  Environment Configurations](#i-environment-configurations)
-    - [ii. Agent Configurations](#ii-agent-configurations)
-  - [5. Run Training](#5-run-training)
-  - [6. Run Testing](#6-run-testing)
-  - [7. Output](#7-output)
-    - [i.  Videos](#i-videos)
-    - [ii. Training Plots](#ii-training-plots)
+  - [Team Members](team-members)
+  - [Dependencies](dependencies)
+  - [Repository Setup](repository-setup)
+  - [Setting The Configurations](setting-the-configurations)
+    - [Environment Configurations](environment-configurations)
+    - [Agent Configurations](agent-configurations)
+  - [Run Training](run-training)
+  - [Run Testing](run-testing)
+  - [Output](output)
+    - [Videos](videos)
+    - [Training Plots](training-plots)
 
 ## Team Members
 - [Amey Anil Deshpande](https://github.com/AmeyDeshpande97)
@@ -79,15 +79,17 @@ Make sure to set `train` to `False` in the yaml for testing.
 This section shows the output performance of the algorithms.
 
 ### Videos
-
-| **DQN** https://user-images.githubusercontent.com/44564963/206376512-077cf56a-ef74-4dc5-8aef-c9a5ca7aef8e.mp4 | **DDDQN** https://user-images.githubusercontent.com/44564963/206376630-006774c7-4f95-4b37-b996-64f93856dc52.mp4 |
-|-----------------|------------------|
-| **DDPG**  https://user-images.githubusercontent.com/44564963/206376766-f89ee071-7fe4-4bf3-aff2-a2c8fd99b128.mp4 | **PPO**  https://user-images.githubusercontent.com/44564963/206376797-ee0210c7-a7c2-4efb-9374-20a1def8a64e.mp4   |
-
-https://github.com/ranebhushan/cs525_project/blob/main/docs/videos/DDDQN-2022-12-06_15.33.44.mp4
+#### DQN
+https://user-images.githubusercontent.com/44564963/206376512-077cf56a-ef74-4dc5-8aef-c9a5ca7aef8e.mp4
+#### DDDQN
+https://user-images.githubusercontent.com/44564963/206376630-006774c7-4f95-4b37-b996-64f93856dc52.mp4
+#### DDPG
+https://user-images.githubusercontent.com/44564963/206376766-f89ee071-7fe4-4bf3-aff2-a2c8fd99b128.mp4
+#### PPO
+https://user-images.githubusercontent.com/44564963/206376797-ee0210c7-a7c2-4efb-9374-20a1def8a64e.mp4
 
 ### Training Plots
 
-| **DQN** <img src="docs/img/DQN_mean_reward.png" width="435"/> | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="435"/> |
-|-----------------|------------------|
-| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="435"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="435"/>   |
+| **DQN** <img src="docs/img/DQN_mean_reward.png" width="500"/>   | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="500"/> |
+|-----------------------------------------------------------------|-------------------------------------------------------------------|
+| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="500"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="500"/>     |

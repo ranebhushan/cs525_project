@@ -84,8 +84,10 @@ This section shows the output performance of the algorithms.
 |-----------------|------------------|
 | **DDPG**  <video width="261" height="96" controls><source src="docs/videos/DDPG-2022-12-06_15.32.25.mp4" type="video/mp4"></video> | **PPO**  <video width="261" height="96" controls><source src="docs/videos/PPO-2022-12-06_16.09.37.mp4" type="video/mp4"></video>   |
 
+https://github.com/ranebhushan/cs525_project/blob/main/docs/videos/DDDQN-2022-12-06_15.33.44.mp4
+
 ### Training Plots
 
-| **DQN** <img src="docs/img/DQN_mean_reward.png" width="261" height="226"/> | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="261" height="226"/> |
+| **DQN** <img src="docs/img/DQN_mean_reward.png" width="335" height="300"/> | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="335" height="300"/> |
 |-----------------|------------------|
-| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="261" height="226"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="261" height="226"/>   |
+| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="335" height="300"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="335" height="300"/>   |

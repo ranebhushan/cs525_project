@@ -6,31 +6,31 @@ This repository implements deep reinforcement learning algorithms for decision m
 
 ## Contents
 - Deep Reinforcement Learning for Decision Making in Autonomous Driving
-  - [Team Members](team-members)
-  - [Dependencies](dependencies)
-  - [Repository Setup](repository-setup)
-  - [Setting The Configurations](setting-the-configurations)
-    - [Environment Configurations](environment-configurations)
-    - [Agent Configurations](agent-configurations)
-  - [Run Training](run-training)
-  - [Run Testing](run-testing)
-  - [Output](output)
-    - [Videos](videos)
-    - [Training Plots](training-plots)
+  - [1. Team Members](#1-team-members)
+  - [2. Dependencies](#2-dependencies)
+  - [3. Repository Setup](#3-repository-setup)
+  - [4. Setting The Configurations](#4-setting-the-configurations)
+    - [i. Environment Configurations](#i-environment-configurations)
+    - [ii. Agent Configurations](#ii-agent-configurations)
+  - [5. Run Training](#5-run-training)
+  - [6. Run Testing](#6-run-testing)
+  - [7. Output](#7-output)
+    - [i. Videos](#i-videos)
+    - [ii. Training Plots](#ii-training-plots)
 
-## Team Members
+## 1. Team Members
 - [Amey Anil Deshpande](https://github.com/AmeyDeshpande97)
 - [Bhushan Ashok Rane](https://github.com/ranebhushan)
 - [Denny Boby](https://github.com/dennyboby)
 - [Yash Rajendra Patil](https://github.com/patilyashr)
 
-## Dependencies
+## 2. Dependencies
 - OS : [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/)
 - Python : [3.9.13](https://www.python.org/downloads/release/python-3913/)
 - PyTorch : [1.13.0](https://pytorch.org/)
 - OpenAI Gym : [0.26.2](https://www.gymlibrary.dev/)
 
-## Repository Setup
+## 3. Repository Setup
 In order to setup the repository locally on your system, open a new terminal and follow the instructions below:
 
     cd ~
@@ -41,10 +41,10 @@ In order to setup the repository locally on your system, open a new terminal and
     mkdir {weights,logs}
     pip install -r requirements.txt
 
-## Setting The Configurations
+## 4. Setting The Configurations
 Before starting the training, the right configuration needs to be set in the config file. Following sections explain how to set them up.
 
-### Environment Configurations
+### i. Environment Configurations
 This section explains how to configure the highway environment. Running the following command will take you to the environment config file.
 
     cd ~/cs525_project/
@@ -52,7 +52,7 @@ This section explains how to configure the highway environment. Running the foll
 
 Here you can set the configurations required for the environment. More details of the configurations are provided in this [link](https://highway-env.readthedocs.io/en/latest/quickstart.html#configuring-an-environment). We trained our code for the values set in the config file.
 
-### Agent Configurations
+### ii. Agent Configurations
 This section explains how to configure the parameters for the agent. DQN, DDDQN, DDPG Running the following command will take you to the environment config file.
 
     cd ~/cs525_project/
@@ -60,7 +60,7 @@ This section explains how to configure the parameters for the agent. DQN, DDDQN,
 
 The algorithm_name can be the DQN, DDDQN, DDPG and PPO. Make sure to set `train` to `True` in the yaml for training.
 
-## Run Training
+## 5. Run Training
 This section explains how to run the training code. Once the configuration is set, to run the training, run the following command.
 
     cd ~/cs525_project/
@@ -68,17 +68,17 @@ This section explains how to run the training code. Once the configuration is se
 
 `Point to note:` The weights are stored in `weights` folder with date/time and model name. The logs are saved in `logs` folder with same date/time and model name in csv format.
 
-## Run Testing
+## 6. Run Testing
 This section explains how to run the testing code. Once the configuration is set, to run the test, run the following command.
 Make sure to set `train` to `False` in the yaml for testing.
 
     cd ~/cs525_project/
     ./run.sh <algorithm_name> # Eg: ./run.sh DDDQN
 
-## Output
+## 7. Output
 This section shows the output performance of the algorithms.
 
-### Videos
+### i. Videos
 #### DQN
 https://user-images.githubusercontent.com/44564963/206376512-077cf56a-ef74-4dc5-8aef-c9a5ca7aef8e.mp4
 #### DDDQN
@@ -88,7 +88,7 @@ https://user-images.githubusercontent.com/44564963/206376766-f89ee071-7fe4-4bf3-
 #### PPO
 https://user-images.githubusercontent.com/44564963/206376797-ee0210c7-a7c2-4efb-9374-20a1def8a64e.mp4
 
-### Training Plots
+### ii. Training Plots
 
 | **DQN** <img src="docs/img/DQN_mean_reward.png" width="500"/>   | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="500"/> |
 |-----------------------------------------------------------------|-------------------------------------------------------------------|

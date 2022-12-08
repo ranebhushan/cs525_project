@@ -88,6 +88,6 @@ https://github.com/ranebhushan/cs525_project/blob/main/docs/videos/DDDQN-2022-12
 
 ### Training Plots
 
-| **DQN** <img src="docs/img/DQN_mean_reward.png" width="435" height="400"/> | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="435" height="400"/> |
+| **DQN** <img src="docs/img/DQN_mean_reward.png" width="435"/> | **DDDQN** <img src="docs/img/DDDQN_mean_reward.png" width="435"/> |
 |-----------------|------------------|
-| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="435" height="400"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="435" height="400"/>   |
+| **DDPG** <img src="docs/img/DDPG_mean_reward.png" width="435"/> | **PPO** <img src="docs/img/PPO_mean_reward.png" width="435"/>   |

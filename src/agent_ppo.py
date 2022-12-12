@@ -1,260 +1,382 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-import random
-import numpy as np
-from collections import namedtuple, deque
-import os
-import sys
-import math
-
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
+from torch.distributions import Categorical, MultivariateNormal
+import gym
+import numpy as np
+import os
+import random
+from highway_env import utils
+from highway_env.envs.common.action import Action
+from highway_env.road.road import Road, RoadNetwork
+from highway_env.vehicle.controller import ControlledVehicle
+from gym.spaces import box, Discrete, discrete
 
-from agent import Agent
-from model.dueling_dqn import DuelingDQN
-import csv
-import gc
-from datetime import datetime
-from torchsummary import summary
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-Transition = namedtuple('transition', ('state', 'action', 'reward', 'next_state', 'done'))
-
-class Memory(object):
-    def __init__(self, memory_size: int, device) -> None:
-        self.memory_size = memory_size
-        self.buffer = deque(maxlen=self.memory_size)
-        self.device = device
-
-    def push(self, *args) -> None:
-        self.buffer.append(Transition(*args))
-
-    def size(self):
-        return len(self.buffer)
-
-    def sample(self, batch_size: int):
-        if batch_size > len(self.buffer):
-            batch_size = len(self.buffer)
-        indexes = np.random.choice(np.arange(len(self.buffer)), size=batch_size, replace=False)
-        batch = [self.buffer[i] for i in indexes]
-        # Converts batch of transitions to transitions of batches
-        batch = Transition(*zip(*batch))
-        # Convert to tensors with correct dimensions
-        states = torch.FloatTensor(np.array(batch.state)).to(self.device)
-        next_states = torch.FloatTensor(np.array(batch.next_state)).to(self.device)
-        actions = torch.FloatTensor(np.array(batch.action)).unsqueeze(1).to(self.device)
-        rewards = torch.FloatTensor(np.array(batch.reward)).unsqueeze(1).to(self.device)
-        dones = torch.FloatTensor(np.array(batch.done)).unsqueeze(1).to(self.device)
-        del indexes
-        del batch
-        return states, actions, rewards, next_states, dones
-
-    def clear(self):
-        self.buffer.clear()
-
-class Agent_DDDQN(Agent):
-    def __init__(self, env, args):
-        super(Agent_DDDQN,self).__init__(env)
-        ###########################
-        gc.enable()
-        state, _ = self.env.reset()
-        self.epsilon_start = args['epsilon_start']
-        self.epsilon_end = args['epsilon_end']
-        self.epsilon_decay = args['epsilon_decay']
-        self.epsilon = self.epsilon_start
-
-        self.gamma = args['gamma']
-        self.batch_size = args['batch_size']
-        self.render = args['render']
-        self.buffer_size = args['buffer_size']
-        self.learning_rate = args['learning_rate']
-        self.num_frames = state.shape[0]
-        self.steps = 0
-        self.target_update_frequency = args['target_update_frequency']
-        self.start_learning = args['start_learning']
-        self.total_episodes = args['total_episodes']
-        self.model_save_frequency = args['model_save_frequency']
-        self.load_model = args['load_model']
-        self.clip = args['clip_gradients']
-        self.reward_save_frequency = args['reward_save_frequency']
-        self.train_frequency = args['train_frequency']
-        self.model_name = args['model_name']
-        self.trained_model_name = args['trained_model_folder_and_filename']
-       
-        self.current_time = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-        self.directory_path = os.path.join("weights", f"{self.model_name}-{self.current_time}")
-        self.csv_filename = os.path.join('logs', f'{self.model_name}-{self.current_time}.csv')
-
-        if args['train']:
-            if(os.path.exists(self.directory_path) == False):
-                os.mkdir(self.directory_path)
-
-            with open(self.csv_filename, mode='w', newline="") as csvFile:
-                csvWriter = csv.writer(csvFile)
-                csvWriter.writerow(["Date Time", "Episode", "Reward", "Epsilon", "Loss", "Max. Reward", "Mean Reward"])
-
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # self.device = torch.device('cpu')
-        self.buffer_replay = Memory(self.buffer_size, self.device)
-        self.scores = deque(maxlen=100)
-        self.rewards = deque(maxlen=self.reward_save_frequency)
-        # Initialise policy and target networks
-        self.online_net = DuelingDQN(state.shape, self.env.action_space.n)
-        # summary(self.online_net, (4, 600, 150))
-        self.target_net = DuelingDQN(state.shape, self.env.action_space.n)
-
-        self.online_net = self.online_net.to(device=self.device)
-        self.target_net = self.target_net.to(device=self.device)
-        
-        if (not args['train']) or self.load_model:
-            try:
-                self.online_net.load_state_dict(torch.load(os.path.join("weights", f'{self.trained_model_name}')))
-                print('Loaded trained model')
-            except:
-                print('Loading trained model failed')
-                pass
-
-        # Set target net to be the same as policy net
-        self.replace_target_net(0)
-
-        # Set optimizer & loss function
-        self.optim = optim.Adam(self.online_net.parameters(), lr=self.learning_rate)
-        self.loss = torch.nn.SmoothL1Loss()
-
-    # Updates the target net to have same weights as policy net
-    def replace_target_net(self, steps):
-        if steps % self.target_update_frequency == 0:
-            self.target_net.load_state_dict(self.online_net.state_dict())
-            print('Target network replaced')
-            
-    def init_game_setting(self):
-        """
-        Testing function will call this function at the beginning of new game
-        Put anything you want to initialize if necessary.
-        If no parameters need to be initialized, you can leave it as blank.
-        """
-        ###########################
-        # YOUR IMPLEMENTATION HERE #
-        
-        ###########################
-        pass
+class Memory:
+    def __init__(self):
+        self.actions = []
+        self.states = []
+        self.logprobs = []
+        self.rewards = []
+        self.is_terminals = []
     
-    def state_to_tensor(self, state):
-        state_t = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        return state_t
+    def clear_memory(self):
+        del self.actions[:]
+        del self.states[:]
+        del self.logprobs[:]
+        del self.rewards[:]
+        del self.is_terminals[:]
 
-    def make_action(self, observation, test=False):
-        ###########################
-        if random.random() > self.epsilon or test:
-            observation_t = self.state_to_tensor(observation)
-            with torch.no_grad():
-                q_values = self.online_net(observation_t)
-                max_q_index = torch.argmax(q_values, dim=1)
-            action = max_q_index.item()
-        else:
-            action = self.env.get_random_action()
-        ###########################
-        return action
+    def remember(self, state, action, logprob, reward, is_terminal):
+        state = torch.from_numpy(state).float().to(device)
+        action = torch.tensor(action, dtype=torch.float16).to(device)
+        self.actions.append(action)
+        self.states.append(state)
+        self.logprobs.append(logprob)
+        # if reward==0:
+        #     reward = 50
+        self.rewards.append(reward)
+        self.is_terminals.append(is_terminal)
 
-    def optimize_model(self):
-        if self.buffer_replay.size() < self.batch_size:
-            return
-        states, actions, rewards, next_states, dones = self.buffer_replay.sample(self.batch_size)
+
+
+
+class ActorCritic(nn.Module):
+    def __init__(self, state_dim, action_dim, n_latent_var, checkpoint='tmp/ppo'):
+        super(ActorCritic, self).__init__()
+
+        # actor
+        self.action_layer = nn.Sequential(
+                nn.Linear(state_dim, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, action_dim),
+                nn.Softmax(dim=-1)
+                )
+        
+        # critic
+        self.value_layer = nn.Sequential(
+                nn.Linear(state_dim, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, 1),
+                nn.Tanh()
+                )
+        self.checkpoint = checkpoint
+        self.dist = None
+
+        
+    def forward(self):
+        raise NotImplementedError
+
+        
+    def act(self, state):
+        
+
         with torch.no_grad():
-            q_next_target = self.target_net(next_states)
-            q_next_online = self.online_net(next_states)
-            online_max_action = torch.argmax(q_next_online, dim=1, keepdim=True)
-            q_max = q_next_target.gather(1, online_max_action.long())
-            # Using q_max and reward, calculate q_target
-            # (1-done) ensures q_target is reward if transition is in a terminating state
-            q_target = rewards + self.gamma * q_max * (1 - dones)
-        q_pred = self.online_net(states).gather(1, actions.long())
-        # Compute the loss
-        loss = self.loss(q_pred, q_target)
-        # Perform backward propagation and optimization step
-        self.optim.zero_grad()
-        loss.backward()
+            state = torch.from_numpy(state).float().to(device) 
+            action_probs = self.action_layer(state)
+            dist = Categorical(action_probs)
+            action = dist.sample()
+            self.dist = dist
+            
+            # memory.states.append(state)
+            # memory.actions.append(action)
+            # memory.logprobs.append(dist.log_prob(action))
+            return action.item(), dist.log_prob(action)
+    
+    def evaluate(self, state, action):
+        action_probs = self.action_layer.forward(state)
+        dist = Categorical(action_probs)
+        
+        action_logprobs = dist.log_prob(action)
+        dist_entropy = dist.entropy()
+        
+        state_value = self.value_layer.forward(state)
+        
+        return action_logprobs, torch.squeeze(state_value), dist_entropy
 
-        if self.clip:
-            for param in self.online_net.parameters():
-                param.grad.data.clamp_(-1, 1)
+    def save(self):
+        print('saving into {}'.format(self.checkpoint))
+        if not os.path.isdir(self.checkpoint):
+            os.makedirs(self.checkpoint)
+        torch.save(self.action_layer.state_dict(), self.checkpoint+'/action.pt')
+        torch.save(self.value_layer.state_dict(), self.checkpoint+'/value.pt')
 
-        self.optim.step()
+    def load(self):
+        print('loading from {}'.format(self.checkpoint))
+        if not os.path.isdir(self.checkpoint):
+            return
+        self.action_layer.load_state_dict(torch.load(self.checkpoint+'/action.pt'))
+        self.value_layer.load_state_dict(torch.load(self.checkpoint+'/value.pt'))
 
-        return loss.item()
+    def transfer(self):
+        self.old_actor.load_state_dict(self.action_layer.state_dict())
 
-    # Decrement epsilon 
-    def dec_eps(self):
-        self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * math.exp(-1. * self.steps / self.epsilon_decay)
-        self.steps += 1
 
-    def train(self):
-        ###########################
-        mean_score = 0
-        max_score = 0
-        i_episode = 0
-        while i_episode <= self.total_episodes:
-            # Initialize the environment and state
-            current_state, _ = self.env.reset()
-            done = False
-            truncated = False
-            episode_score = 0
-            loss = 0
-            while not (done or truncated):
-                # Select and perform an action
-                action = self.make_action(current_state, False)
-                next_state, reward, done, truncated, _ = self.env.step(action)
-                self.buffer_replay.push(current_state, action, reward, next_state, int(done or truncated))
-                current_state = next_state
-                if self.render:
+class ActorCriticContinuous(nn.Module):
+    def __init__(self, state_dim, action_dim, n_latent_var, checkpoint='tmp/ppo'):
+        super(ActorCriticContinuous, self).__init__()
+
+        # actor
+        self.action_layer = nn.Sequential(
+                nn.Linear(state_dim, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, action_dim),
+                nn.Tanh()
+                )
+        self.std = nn.Parameter(torch.zeros(1,action_dim)).to(device)
+        # critic
+        self.value_layer = nn.Sequential(
+                nn.Linear(state_dim, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, n_latent_var),
+                nn.ReLU(),
+                nn.Linear(n_latent_var, 1),
+                nn.Tanh()
+                )
+        self.checkpoint = checkpoint
+        self.dist = None
+        self.action_var = torch.full((action_dim,), 0.1*0.1).to(device)
+
+        
+    def forward(self):
+        raise NotImplementedError
+
+        
+    def act(self, state):
+        
+
+        with torch.no_grad():
+            state = torch.from_numpy(state).float().to(device) 
+            action_probs = self.action_layer(state)
+            cov_mat = torch.diag(self.action_var).to(device)
+            # print(cov_mat)
+            # print(action_probs)
+            dist = MultivariateNormal(action_probs, cov_mat)
+            action = dist.sample()
+            # print(action, action_probs)
+            log_prob = dist.log_prob(action)
+            self.dist = dist
+            return action.detach().cpu().numpy(), log_prob
+        
+    
+    def evaluate(self, state, action):
+        action_probs = self.action_layer(state)
+        action_var = self.action_var.expand_as(action_probs)
+        cov_mat = torch.diag_embed(action_var).to(device)
+        dist = MultivariateNormal(action_probs, cov_mat)
+        
+        action_logprobs = dist.log_prob(action)
+        dist_entropy = dist.entropy()
+        
+        state_value = self.value_layer(state)
+        
+        return action_logprobs, torch.squeeze(state_value), dist_entropy
+
+    def save(self):
+        print('saving into {}'.format(self.checkpoint))
+        if not os.path.isdir(self.checkpoint):
+            os.makedirs(self.checkpoint)
+        torch.save(self.action_layer.state_dict(), self.checkpoint+'/action.pt')
+        torch.save(self.value_layer.state_dict(), self.checkpoint+'/value.pt')
+
+    def load(self):
+        print('loading from {}'.format(self.checkpoint))
+        if not os.path.isdir(self.checkpoint):
+            return
+        self.action_layer.load_state_dict(torch.load(self.checkpoint+'/action.pt'))
+        self.value_layer.load_state_dict(torch.load(self.checkpoint+'/value.pt'))
+
+    def transfer(self):
+        self.old_actor.load_state_dict(self.action_layer.state_dict())
+        
+class PPO:
+    def __init__(self, env, 
+    n_latent_var, 
+    lr, 
+    betas, 
+    gamma, 
+    K_epochs, 
+    eps_clip, 
+    checkpoint='../models'):
+        self.lr = lr
+        self.betas = betas
+        self.gamma = gamma
+        self.eps_clip = eps_clip
+        self.K_epochs = K_epochs
+        self.env = env
+        self.memory = Memory()
+        self.checkpoint = checkpoint
+        # self.policy = ActorCritic(env.reset().reshape(-1).shape[0], env.action_space.n, n_latent_var, checkpoint+'/policy').to(device)
+        self.MseLoss = nn.MSELoss()
+        self.state_dim,_ = self.env.reset()
+        self.state_dim = self.state_dim.flatten()
+        self.state_dim = self.state_dim.shape[0]
+        # self.policy_old = ActorCritic(env.reset().reshape(-1).shape[0], env.action_space.n, n_latent_var, checkpoint+'/old_policy').to(device)
+        # self.policy_old.load_state_dict(self.policy.state_dict())
+        if isinstance(env.action_space, Discrete):
+            self.policy = ActorCritic(self.state_dim, env.action_space.n, n_latent_var, checkpoint+'/policy').to(device)
+            self.policy_old = ActorCritic(self.state_dim, env.action_space.n, n_latent_var, checkpoint+'/old_policy').to(device)
+            self.policy_old.load_state_dict(self.policy.state_dict())
+        else:
+            self.policy = ActorCriticContinuous(self.state_dim, env.action_space.shape[0], n_latent_var, checkpoint+'/policy').to(device)
+            self.policy_old = ActorCriticContinuous(self.state_dim, env.action_space.shape[0], n_latent_var, checkpoint+'/old_policy').to(device)
+            self.policy_old.load_state_dict(self.policy.state_dict())
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr, betas=betas)
+
+    def select_action(self, state):
+        return self.policy_old.act(state)
+
+    def remember(self, state, action, log_prob, rewards, is_terminal):
+        self.memory.remember(state, action, log_prob, rewards, is_terminal)
+    
+    def update(self, memory):   
+        # Monte Carlo estimate of state rewards:
+        # print('update')
+        rewards = []
+        discounted_reward = 0
+        for reward, is_terminal in zip(reversed(memory.rewards), reversed(memory.is_terminals)):
+            if is_terminal:
+                discounted_reward = 0
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            rewards.insert(0, discounted_reward)
+        # Normalizing the rewards:
+        # print(rewards)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+        # print(rewards)
+        # convert list to tensor
+        old_states = torch.stack(memory.states).to(device).detach()
+        old_actions = torch.stack(memory.actions).to(device).detach()
+        old_logprobs = torch.stack(memory.logprobs).to(device).detach()
+        
+        # Optimize policy for K epochs:
+        self.policy.action_layer.train()
+        self.policy.value_layer.train()
+        self.optimizer.zero_grad()
+        for _ in range(self.K_epochs):
+            # Evaluating old actions and values :
+            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
+            # print(logprobs-old_logprobs)
+            # Finding the ratio (pi_theta / pi_theta__old):
+            ratios = torch.exp(logprobs - old_logprobs.detach())
+            # print(ratios)
+            # Finding Surrogate Loss:
+            advantages = rewards - state_values.detach()
+            # print(advantages)
+            surr1 = ratios * advantages
+            surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
+            loss = -torch.mean(torch.min(surr1, surr2)) + 0.5*torch.mean(self.MseLoss(state_values, rewards)) - 0.001*torch.mean(dist_entropy)
+            
+            # take gradient step
+            # print(loss)
+            loss.backward()
+            self.optimizer.step()
+
+        
+        # Copy new weights into old policy:
+        self.policy_old.load_state_dict(self.policy.state_dict())
+
+    def save(self, scores):
+        print('saving to checkpoint................................')
+        self.policy.save()
+        self.policy_old.save()
+        np.savetxt(os.path.abspath(self.checkpoint)+'/data.csv', scores, delimiter=',')
+
+    def load(self):
+        print('loading data........................................')
+        self.policy.load()
+        self.policy_old.load()
+
+    def _reward(self, action: Action) -> float:
+        """
+        The reward is defined to foster driving at high speed, on the rightmost lanes, and to avoid collisions.
+        :param action: the last action performed
+        :return: the corresponding reward
+        """
+        lane_change = 0 if action==2 or action==0 else 1
+        neighbours = self.env.road.network.all_side_lanes(self.env.vehicle.lane_index)
+        lane = self.env.vehicle.target_lane_index[2] if isinstance(self.env.vehicle, ControlledVehicle) \
+            else self.env.vehicle.lane_index[2]
+        # if self.env.vehicle.crashed:
+        #     reward = self.env.config["collision_reward"]*100
+        # else:
+        #     reward = 10
+                # + self.env.RIGHT_LANE_REWARD * lane*10 / max(len(neighbours) - 1, 1) \
+        scaled_speed = utils.lmap(self.env.vehicle.speed, self.env.config["reward_speed_range"], [0, 1])
+        # print(scaled_speed, self.env.config["reward_speed_range"])
+        # print(scaled_speed)
+        # print(self.env.RIGHT_LANE_REWARD*lane)
+        # print(self.env.config["collision_reward"])
+        crashed = -3 if self.env.vehicle.crashed else 1
+        reward = crashed*1
+
+        reward = 0 if not self.env.vehicle.on_road else reward
+        return reward
+
+
+    def runner(self, i_episode, render=False, train=True):
+        # env = gym.make(env_name)
+        scores=[]
+        # training loop
+        # np.random.seed(0)
+        # self.load()
+        if not train:
+            self.load()
+        success=0
+        # t=0
+        total=0
+        count_rand=0
+        for i in range(1,i_episode+1):
+            state = self.env.reset()
+            running_reward = 0.0
+            done=False
+            t=0
+            # print(state)
+            while not done:
+                t+=1
+                state = state.reshape(-1)
+                action, log_prob = self.select_action(state)
+                # val=random.random()
+                # if val<0.03:
+                #     action = self.env.action_space.sample()
+                #     log_prob = self.policy_old.dist.log_prob(torch.tensor(action))
+                #     print('random')
+                new_state, reward, done, info = self.env.step(action)
+                # reward_new = self._reward(action)
+                self.remember(state, action, log_prob, reward, done)
+                state = new_state
+                running_reward += reward
+                # self.update()
+                if render:
                     self.env.render()
-                if self.buffer_replay.size() > self.start_learning:
-                    # Decay epsilon
-                    self.dec_eps()
-                    # Update target network
-                    self.replace_target_net(self.steps)
-                    if self.steps % self.train_frequency == 0:
-                        loss = self.optimize_model()
-                else:
-                    i_episode = 0
-                    continue
-                
-                # Add the reward to the previous score
-                episode_score += reward
-
-            if self.buffer_replay.size() > self.start_learning:
-                print('Episode: {:5d},\tScore: {:3.4f},\tAvg.Score: {:3.4f},\tEpislon: {:1.3f},\tLoss: {:8.4f},\tMax.Score: {:3.4f}'
-                .format(i_episode, episode_score, mean_score, self.epsilon, loss, max_score))
-                
-                csvData = [ datetime.now().strftime("%Y-%m-%d--%H-%M-%S"),
-                            i_episode,
-                            episode_score,
-                            self.epsilon,
-                            loss,
-                            max_score,
-                            mean_score
-                            ]
-                with open(self.csv_filename, mode='a') as csvFile:
-                    csvWriter = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    csvWriter.writerow(csvData)
-            else:
-                print('Gathering Data: {0}/{1}'.format(self.buffer_replay.size(),self.start_learning))
-
-            if (i_episode > 1) and (i_episode % self.model_save_frequency == 0):
-                # Save model
-                self.current_moment = datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-                torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
-                print('-'*100)
-                print("Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
-                print('-'*100)
-
-            i_episode += 1
-            max_score = episode_score if episode_score > max_score else max_score
-            self.scores.append(episode_score)
-            self.rewards.append(episode_score)
-            mean_score = np.mean(self.scores)
-
-        print('='*50, 'Complete', '='*50)
-        torch.save( self.online_net.state_dict(), os.path.join('.', self.directory_path, f'{self.model_name}-model-{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.pth'))
-        print("Final Model Saved :", os.path.join(self.directory_path, f'{self.model_name}-model-{self.current_moment}.pth'))
-        ###########################
+                # if val<0.3 and done and t<100:
+                #     count_rand+=1
+                #     print('crashed because of random')
+            total+=t
+            # print(reward_new)
+            # self.update()
+            if i%2==0 and train==True:
+                self.update()
+                # self.memory.clear_memory()
+            if i%10==0:
+                self.memory.clear_memory()
+            scores.append(running_reward)
+            print('episode ', i, 'score %.2f' % running_reward,
+                'trailing 50 games avg %.3f' % np.mean(scores[-50:]), 'finished after ', t, ' steps', 'average steps: ', total/i,
+                'crash because of random: ', count_rand)
+            if i%25==0 and train==True:
+                self.save(scores)
+        # scores.append(running_reward)
+        # np.savetxt(self.checkpoint+'/data.csv', scores, delimiter=',')
+        if train:
+            self.save(scores)
+        self.env.close()
+        return scores

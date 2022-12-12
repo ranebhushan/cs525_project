@@ -40,96 +40,7 @@ class Memory:
         self.rewards.append(reward)
         self.is_terminals.append(is_terminal)
 
-# class Actor(nn.Module):
-#     def __init__(self, state_dim, action_dim, checkpoint):
-#         super(Actor, self).__init__()
 
-#         self.action_dim = action_dim
-#         self.state_dim = state_dim
-#         self.checkpoint = checkpoint+'/actor_ddpg'
-        
-#         self.fc1 = nn.Linear(state_dim, 32)
-#         self.fc2 = nn.Linear(32,64)
-#         self.fc3 = nn.Linear(64,32)
-#         self.mu = nn.Linear(32,action_dim)
-
-#         self.bn1 = nn.LayerNorm(32)
-#         self.bn2 = nn.LayerNorm(64)
-#         self.bn3 = nn.LayerNorm(32)
-
-#         fc1 = 1.0/np.sqrt(self.fc1.weight.data.size()[0])
-#         fc2 = 1.0/np.sqrt(self.fc2.weight.data.size()[0])
-#         fc3 = 1.0/np.sqrt(self.fc3.weight.data.size()[0])
-#         mu = 0.03
-
-#         torch.nn.init.uniform_(self.fc1.weight.data, -fc1, fc1)
-#         torch.nn.init.uniform_(self.fc1.bias.data, -fc1, fc1)
-#         torch.nn.init.uniform_(self.fc2.weight.data, -fc2, fc2)
-#         torch.nn.init.uniform_(self.fc2.bias.data, -fc2, fc2)
-#         torch.nn.init.uniform_(self.fc3.weight.data, -fc3, fc3)
-#         torch.nn.init.uniform_(self.fc3.bias.data, -fc3, fc3)
-#         torch.nn.init.uniform_(self.mu.weight.data, -mu, mu)
-#         torch.nn.init.uniform_(self.mu.bias.data, -mu, mu)
-
-
-#     def forward(self, x, act=False):
-#         x = F.relu(self.bn1(self.fc1(x)))
-#         x = F.relu(self.bn2(self.fc2(x)))
-#         x = F.relu(self.bn3(self.fc3(x)))
-#         x = F.softmax(self.mu(x))
-
-#         return x.to(device)
-    
-#     def save(self):
-#         torch.save(self.state_dict(), self.checkpoint)
-
-#     def load(self):
-#         self.load_state_dict(torch.load(self.checkpoint))
-
-
-# class Critic(nn.Module):
-#     def __init__(self, state_dim, checkpoint):
-#         super(Critic, self).__init__()
-
-#         self.state_dim = state_dim
-#         self.checkpoint = checkpoint+'/critic_ddpg'
-
-#         self.fc1 = nn.Linear(state_dim, 64)
-#         self.bn1 = nn.LayerNorm(64)
-#         self.fc2 = nn.Linear(64,128)
-#         self.bn2 = nn.LayerNorm(128)
-#         self.fc3 = nn.Linear(128,32)
-#         self.bn3 = nn.LayerNorm(32)
-#         self.pi = nn.Linear(32,1)
-
-#         fc1 = 1.0/np.sqrt(self.fc1.weight.data.size()[0])
-#         fc2 = 1.0/np.sqrt(self.fc2.weight.data.size()[0])
-#         fc3 = 1.0/np.sqrt(self.fc3.weight.data.size()[0])
-#         pi = 0.03
-
-#         torch.nn.init.uniform_(self.fc1.weight.data, -fc1, fc1)
-#         torch.nn.init.uniform_(self.fc1.bias.data, -fc1, fc1)
-#         torch.nn.init.uniform_(self.fc2.weight.data, -fc2, fc2)
-#         torch.nn.init.uniform_(self.fc2.bias.data, -fc2, fc2)
-#         torch.nn.init.uniform_(self.fc3.weight.data, -fc3, fc3)
-#         torch.nn.init.uniform_(self.fc3.bias.data, -fc3, fc3)
-#         torch.nn.init.uniform_(self.pi.weight.data, -pi, pi)
-#         torch.nn.init.uniform_(self.pi.bias.data, -pi, pi)
-
-
-#     def forward(self, x):
-#         x = F.relu(self.bn1(self.fc1(x)))
-#         x = F.relu(self.bn2(self.fc2(x)))
-#         x = F.relu(self.bn3(self.fc3(x)))
-#         x = self.pi(x)
-
-#         return x.to(device)
-
-#     def save(self):
-#         torch.save(self.state_dict(), self.checkpoint)
-
-#     def load(self):
-#         self.load_state_dict(torch.load(self.checkpoint))
 
 
 class ActorCritic(nn.Module):
@@ -164,11 +75,7 @@ class ActorCritic(nn.Module):
 
         
     def act(self, state):
-        # state = torch.from_numpy(state).float().to(device)
-        # action_probs = self.old_actor.forward(state)
-        # dist = Categorical(action_probs)
-        # action = dist.sample()
-        # print(state)
+        
 
         with torch.no_grad():
             state = torch.from_numpy(state).float().to(device) 
@@ -244,11 +151,7 @@ class ActorCriticContinuous(nn.Module):
 
         
     def act(self, state):
-        # state = torch.from_numpy(state).float().to(device)
-        # action_probs = self.old_actor.forward(state)
-        # dist = Categorical(action_probs)
-        # action = dist.sample()
-        # print(state)
+        
 
         with torch.no_grad():
             state = torch.from_numpy(state).float().to(device) 
@@ -414,23 +317,7 @@ class PPO:
         # print(self.env.config["collision_reward"])
         crashed = -3 if self.env.vehicle.crashed else 1
         reward = crashed*1
-            # + 1 * scaled_speed \
-            # + crashed*1
-            # + 0.01*lane_change \
-            # + 0.24 * lane / max(len(neighbours) - 1, 1) \
-            
 
-        # print(reward)
-        # reward = self.env.config["collision_reward"] if self.env.vehicle.crashed else reward
-        # reward = utils.lmap(reward,
-        #                   [-3, 2],
-        #                   [-1, 1])
-        # print(reward)
-        # reward = utils.lmap(reward,
-        #                 [self.env.config["collision_reward"]*5, (self.env.HIGH_SPEED_REWARD + self.env.RIGHT_LANE_REWARD)*5],
-        #                 [0, 5])
-        # print(reward)
-        # print(self.env.vehicle.speed, reward)
         reward = 0 if not self.env.vehicle.on_road else reward
         return reward
 
